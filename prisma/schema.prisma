@@ -30,68 +30,70 @@ enum TransactionType {
   DEPOSIT
   WITHDRAWAL // Correction : CHANGE RETRAIT TO WITHDRAWAL
   TRANSFER
-  INVOICE    // Correction : CHANGE FACTURE TO INVOICE
+  INVOICE // Correction : CHANGE FACTURE TO INVOICE
 }
 
+
 model User {
-  id             String      @id @default(uuid())
-  email          String      @unique
-  phoneNumber    String      @unique
-  passwordHash   String
-  firstName      String
-  lastName       String
-  dateOfBirth    DateTime
-  address        String?
-  city           String?
-  country        String?
-  isVerified     Boolean     @default(false)
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  kycStatus      KycStatus   @default(PENDING)
-  wallets        Wallet[]
-  notifications  Notification[]
-  kyc            Kyc?
-  contacts       Contact[]   @relation("UserContacts")
-  contactList    Contact[]   @relation("ContactList")
-  
+  id            String         @id @default(uuid())
+  email         String         @unique
+  phoneNumber   String         @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  address       String?
+  photo         String?
+  city          String?
+  country       String?
+  isVerified    Boolean        @default(false)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  kycStatus     KycStatus      @default(PENDING)
+  wallets       Wallet[]
+  notifications Notification[]
+  kyc           Kyc?
+  contacts      Contact[]      @relation("UserContacts")
+  contactList   Contact[]      @relation("ContactList")
+
   @@index([phoneNumber])
 }
 
 model Wallet {
-  id                  String      @id @default(uuid())
-  userId              String
-  currency            String
-  qrCode              String      @unique
-  balance             Decimal     @default(0.00) @db.Decimal(20, 2)
-  isActive            Boolean     @default(true)
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  dailyLimit          Decimal?    @db.Decimal(20, 2)
-  monthlyLimit        Decimal?    @db.Decimal(20, 2)
-  user                User        @relation(fields: [userId], references: [id])
-  sentTransactions    Transaction[] @relation("SentTransactions")
+  id                   String        @id @default(uuid())
+  userId               String
+  currency             String
+  qrCode               String        @unique
+  balance              Decimal       @default(0.00) @db.Decimal(20, 2)
+  isActive             Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  dailyLimit           Decimal?      @db.Decimal(20, 2)
+  monthlyLimit         Decimal?      @db.Decimal(20, 2)
+  user                 User          @relation(fields: [userId], references: [id])
+  sentTransactions     Transaction[] @relation("SentTransactions")
   receivedTransactions Transaction[] @relation("ReceivedTransactions")
 
   @@index([userId])
 }
 
 model Transaction {
-  id                 String             @id @default(uuid())
-  senderWalletId     String
-  receiverWalletId   String
-  amount             Decimal            @db.Decimal(20, 2)
-  currency           String
-  status             TransactionStatus
-  type               TransactionType
-  reference          String             @unique
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  description        String?
-  feeAmount          Decimal            @default(0.00) @db.Decimal(20, 2)
-  feeCurrency        String?
-  senderWallet       Wallet             @relation("SentTransactions", fields: [senderWalletId], references: [id], onDelete: Cascade)
-  receiverWallet     Wallet             @relation("ReceivedTransactions", fields: [receiverWalletId], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid())
+  senderWalletId   String
+  receiverWalletId String
+  amount           Decimal           @db.Decimal(20, 2)
+  currency         String
+  status           TransactionStatus
+  type             TransactionType
+  reference        String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  description      String?
+  feeAmount        Decimal           @default(0.00) @db.Decimal(20, 2)
+  feeCurrency      String?
+  senderWallet     Wallet            @relation("SentTransactions", fields: [senderWalletId], references: [id], onDelete: Cascade)
+  receiverWallet   Wallet            @relation("ReceivedTransactions", fields: [receiverWalletId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([senderWalletId])
@@ -99,42 +101,42 @@ model Transaction {
 }
 
 model Kyc {
-  id                   String      @id @default(uuid())
-  userId               String      @unique
-  documentType         String
-  documentNumber       String
-  verificationStatus    KycStatus
-  verifiedAt           DateTime?
-  verificationMethod    String?
-  rejectionReason      String?
-  user                 User        @relation(fields: [userId], references: [id])
+  id                 String    @id @default(uuid())
+  userId             String    @unique
+  documentType       String
+  documentNumber     String
+  verificationStatus KycStatus
+  verifiedAt         DateTime?
+  verificationMethod String?
+  rejectionReason    String?
+  user               User      @relation(fields: [userId], references: [id])
 }
 
 model Notification {
-  id         String           @id @default(uuid())
-  userId     String
-  type       NotificationType
-  title      String
-  content    String
-  isRead     Boolean          @default(false)
-  createdAt  DateTime         @default(now())
-  readAt     DateTime?
-  priority   String           @default("NORMAL")
-  user       User             @relation(fields: [userId], references: [id])
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  content   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+  priority  String           @default("NORMAL")
+  user      User             @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
 }
 
 model Contact {
-  id         String   @id @default(uuid())
-  userId     String
-  contactId  String   
-  nickname   String?  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  userId    String
+  contactId String
+  nickname  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user       User     @relation("UserContacts", fields: [userId], references: [id])
-  contact    User     @relation("ContactList", fields: [contactId], references: [id])
+  user    User @relation("UserContacts", fields: [userId], references: [id])
+  contact User @relation("ContactList", fields: [contactId], references: [id])
 
-  @@unique([userId, contactId]) 
+  @@unique([userId, contactId])
 }
