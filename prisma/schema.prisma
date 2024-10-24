@@ -29,36 +29,34 @@ enum TransactionStatus {
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL // Correction : CHANGE RETRAIT TO WITHDRAWAL
-  TRANSFER
+  TRANSFERE
   INVOICE // Correction : CHANGE FACTURE TO INVOICE
 }
 
 enum AccountRequestStatus {
-  PENDING   // En attente
-  APPROVED  // Validé
-  REJECTED  // Rejeté
+  PENDING // En attente
+  APPROVED // Validé
+  REJECTED // Rejeté
 }
 
 model AccountCreationRequest {
-  id                     String              @id @default(uuid())
-  firstName              String              // Prenom
-  lastName               String              // Nom
-  phoneNumber            String              @unique // Telephone
-  idCardFrontPhoto       String              // Photo carte d'identité recto
-  idCardBackPhoto        String              // Photo carte d'identité verso
-  createdAt              DateTime            @default(now()) // Date de création
-  status                 AccountRequestStatus @default(PENDING) // Statut de la demande
+  id               String               @id @default(uuid())
+  firstName        String // Prenom
+  lastName         String // Nom
+  phoneNumber      String               @unique // Telephone
+  idCardFrontPhoto String // Photo carte d'identité recto
+  idCardBackPhoto  String // Photo carte d'identité verso
+  createdAt        DateTime             @default(now()) // Date de création
+  status           AccountRequestStatus @default(PENDING) // Statut de la demande
 
   @@index([phoneNumber])
 }
 
-
 model Role {
-  id String  @id @default(uuid())
-  name  String  @unique
+  id    String @id @default(uuid())
+  name  String @unique
   users User[]
 }
-
 
 model User {
   id            String         @id @default(uuid())
@@ -82,8 +80,9 @@ model User {
   kyc           Kyc?
   contacts      Contact[]      @relation("UserContacts")
   contactList   Contact[]      @relation("ContactList")
-  roleId        String  
+  roleId        String
   role          Role           @relation(fields: [roleId], references: [id])
+
   @@index([phoneNumber])
 }
 
@@ -133,6 +132,8 @@ model Kyc {
   userId             String    @unique
   documentType       String
   documentNumber     String
+  idCardFrontPhoto   String? // Photo carte d'identité recto
+  idCardBackPhoto    String? // Photo carte d'identité verso
   verificationStatus KycStatus
   verifiedAt         DateTime?
   verificationMethod String?
