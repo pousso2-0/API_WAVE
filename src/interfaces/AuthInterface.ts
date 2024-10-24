@@ -6,4 +6,10 @@ export interface IRequestAuth extends Request {
 
 export interface IJwtPayload {
     userId: string; 
+    role: string;
+}
+
+export interface HashServiceInterface {
+    hash(password: string): Promise<string>;
+    compare(password: string, hashedPassword: string): Promise<boolean>;
 }
