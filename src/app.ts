@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/auth", authRoute);
 
 
-app.get("/", authMiddleware, (req: Request, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
     res.send("Bienvenue dans notre api wave");
 })
 
