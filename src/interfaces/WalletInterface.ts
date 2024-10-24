@@ -1,4 +1,4 @@
-import { TransactionInterface } from "./TransactionInterface";
+import { TransactionInterface } from "./TransanctionInterface";
 import { UserInterface } from "./UserInterface";
 
 export interface WalletInterface {

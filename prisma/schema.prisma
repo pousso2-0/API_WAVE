@@ -33,6 +33,26 @@ enum TransactionType {
   INVOICE // Correction : CHANGE FACTURE TO INVOICE
 }
 
+enum AccountRequestStatus {
+  PENDING   // En attente
+  APPROVED  // Validé
+  REJECTED  // Rejeté
+}
+
+model AccountCreationRequest {
+  id                     String              @id @default(uuid())
+  firstName              String              // Prenom
+  lastName               String              // Nom
+  phoneNumber            String              @unique // Telephone
+  idCardFrontPhoto       String              // Photo carte d'identité recto
+  idCardBackPhoto        String              // Photo carte d'identité verso
+  createdAt              DateTime            @default(now()) // Date de création
+  status                 AccountRequestStatus @default(PENDING) // Statut de la demande
+
+  @@index([phoneNumber])
+}
+
+
 model Role {
   id String  @id @default(uuid())
   name  String  @unique
