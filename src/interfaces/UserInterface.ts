@@ -26,3 +26,11 @@ export interface UserInterface {
     contacts: ContactInterface[];
     contactList: ContactInterface[];
 }
+
+export interface User {
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    photo: string | null; // Permettre null
+    address: string | null; // Permettre null
+}
