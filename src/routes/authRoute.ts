@@ -19,5 +19,4 @@ setTimeout(() => {
     // authRoute.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), authController.redirect);
 }, 200);
 
-
 export default authRoute;
