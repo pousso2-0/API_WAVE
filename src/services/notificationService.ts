@@ -4,7 +4,6 @@ import { io } from "../app";
 import { createSMSProvider } from "../providers/SMSProviderFactory";
 
 class NotificationService {
-
   private smsProvider = createSMSProvider();
 
   private async sendNotification(
@@ -58,14 +57,15 @@ class NotificationService {
     idReceiver: string,
     amount: number,
     balanceSender: number,
-    balanceReceiver: number
+    balanceReceiver: number,
+    idTransaction: number
   ) {
     const sender = await this.userExist(idSender);
     const receiver = await this.userExist(idReceiver);
     const totalBalanceSender = balanceSender - amount;
     const totalBalanceReceiver = balanceReceiver + amount;
 
-    const contentSender = `Vous avez envoyé ${amount} à ${receiver.firstName} ${receiver.lastName}. Nouveau solde: ${totalBalanceSender}`;
+    const contentSender = `Vous avez envoyé ${amount}F à ${receiver.firstName} ${receiver.lastName}. Nouveau solde: ${totalBalanceSender} +infos: 200600 Avec WDF ${idTransaction}`;
     await this.sendNotification(
       idSender,
       NotificationType.INFO,
@@ -73,7 +73,7 @@ class NotificationService {
       contentSender
     );
 
-    const contentReceiver = `Vous avez reçu ${amount} de ${sender.firstName} ${sender.lastName}. Nouveau solde: ${totalBalanceReceiver}`;
+    const contentReceiver = ` Vous avez reÇu  ${amount}F De ${sender.firstName} ${sender.lastName} (${receiver.phoneNumber}) Nouveau solde: ${totalBalanceReceiver}F +infos: 200600 Avec WDF ${idTransaction}`;
     await this.sendNotification(
       idReceiver,
       NotificationType.INFO,
@@ -90,13 +90,13 @@ class NotificationService {
     userId: string,
     amount: number,
     currentBalance: number,
-    agencyName: string
+    agencyName: string,
+    idTransaction: number
   ) {
-
-    const user =  await this.userExist(userId);
+    const user = await this.userExist(userId);
     const updatedBalance = currentBalance + amount;
 
-    const content = `Vous avez déposé ${amount} à ${agencyName}. Nouveau solde : ${updatedBalance}`;
+    const content = `Vous avez déposé ${amount} à ${agencyName}. Nouveau solde : ${updatedBalance}F +infos: 200600 Avec WDF ${idTransaction}`;
     await this.sendNotification(
       userId,
       NotificationType.INFO,
@@ -104,20 +104,21 @@ class NotificationService {
       content
     );
 
-    console.log(`Notification de dépôt envoyée à ${user.firstName} ${user.lastName} pour un dépôt de ${amount} à ${agencyName}`);
+    console.log(
+      `Notification de dépôt envoyée à ${user.firstName} ${user.lastName} pour un dépôt de ${amount}F à ${agencyName}`
+    );
   }
-
 
   async notifyWithdrawFromAgency(
     userId: string,
     amount: number,
     currentBalance: number,
-    agencyName: string
+    agencyName: string,
+    idTransaction: number
   ) {
-
-    const user =  await this.userExist(userId);
+    const user = await this.userExist(userId);
     const updatedBalance = currentBalance - amount;
-    const content = `Vous avez retiré ${amount} à ${agencyName}. Nouveau solde : ${updatedBalance}`;
+    const content = `Vous avez retiré ${amount}F à ${agencyName}. Nouveau solde : ${updatedBalance}F +infos: 200600 Avec WDF ${idTransaction}`;
     await this.sendNotification(
       userId,
       NotificationType.INFO,
@@ -125,9 +126,10 @@ class NotificationService {
       content
     );
 
-    console.log(`Notification de retrait envoyée à ${user.firstName} ${user.lastName} pour un retrait de ${amount} à ${agencyName}`);
+    console.log(
+      `Notification de retrait envoyée à ${user.firstName} ${user.lastName} pour un retrait de ${amount} à ${agencyName}`
+    );
   }
-
 
   private async userExist(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
