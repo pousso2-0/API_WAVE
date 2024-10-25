@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { PaginationParams } from "../interfaces/PaginationParams";
 import { PaginationResult } from "../interfaces/PaginationResult";
 import { ApiResponse } from "../interfaces/ApiResponse";
+
 import { IJwtPayload, IRequestAuth } from "../interfaces/AuthInterface";
 import { TimeFrame } from "../types";
 
