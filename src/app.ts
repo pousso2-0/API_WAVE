@@ -2,6 +2,8 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import authRoute from "./routes/authRoute";
+import walletRoute from "./routes/walletRoute";
+import transactionRoute from "./routes/transactionRoute";
 
 
 
