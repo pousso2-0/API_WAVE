@@ -86,7 +86,7 @@ async function createTransactions(users: any[]) {
                 amount: faker.number.int({ min: 1, max: 500 }),
                 currency: 'USD',
                 status: 'COMPLETED',
-                type: 'TRANSFER',
+                type: 'TRANSFERE',
                 reference: faker.string.uuid(),
             },
         });

@@ -6,7 +6,6 @@ doc = Document()
 # Adding Title
 doc.add_heading('Je suis un Développeur Full Stack', level=1)
 
-# Adding Introduction
 
 # Adding Table
 table = doc.add_table(rows=1, cols=3)
