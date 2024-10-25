@@ -2,8 +2,8 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import authRoute from "./routes/authRoute";
-
-
+import transactionRoute from "./routes/transactionRoute";
+import walletRoute from "./routes/walletRoute"; // Assurez-vous que le chemin est correct
 
 const app = express();
 
