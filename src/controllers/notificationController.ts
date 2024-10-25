@@ -16,13 +16,14 @@ class NotificationController {
 
   async notifySendMoneyToContact(req: Request, res: Response) {
     try {
-      const { idSender, idReceiver, amount, balanceSender, balanceReceiver } = req.body;
+      const { idSender, idReceiver, amount, balanceSender, balanceReceiver, idTransaction } = req.body;
       await NotificationService.notifySendMoneyToContact(
         idSender,
         idReceiver,
         amount,
         balanceSender,
-        balanceReceiver
+        balanceReceiver,
+        idTransaction
       );
       res.status(200).json({ message: "Notification de transaction envoyée" });
     } catch (error) {
@@ -32,8 +33,8 @@ class NotificationController {
 
   async notifyDepositAtAgency(req: Request, res: Response) {
     try {
-      const { userId, amount, currentBalance, agencyName } = req.body;
-      await NotificationService.notifyDepositAtAgency(userId, amount, currentBalance, agencyName);
+      const { userId, amount, currentBalance, agencyName, idTransaction } = req.body;
+      await NotificationService.notifyDepositAtAgency(userId, amount, currentBalance, agencyName, idTransaction);
       res.status(200).json({ message: "Notification de dépôt envoyée" });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -42,8 +43,8 @@ class NotificationController {
 
   async notifyWithdrawFromAgency(req: Request, res: Response) {
     try {
-      const { userId, amount, currentBalance, agencyName } = req.body;
-      await NotificationService.notifyWithdrawFromAgency(userId, amount, currentBalance, agencyName);
+      const { userId, amount, currentBalance, agencyName, idTransaction } = req.body;
+      await NotificationService.notifyWithdrawFromAgency(userId, amount, currentBalance, agencyName, idTransaction);
       res.status(200).json({ message: "Notification de retrait envoyée" });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
