@@ -19,4 +19,5 @@ walletRoute.get('/:walletId/balance', (req, res) => walletController.getBalance(
 walletRoute.patch('/:id', (req, res) => walletController.updateWalletProperties(req, res));
 walletRoute.delete('/:id', (req, res) => walletController.deleteWallet(req, res));
 walletRoute.get('/:id/is-active', (req, res) => walletController.isWalletActive(req, res));
+
 export default walletRoute;
