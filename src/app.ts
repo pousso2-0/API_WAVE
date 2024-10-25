@@ -5,6 +5,9 @@ import { Server } from "socket.io";
 import authRoute from "./routes/authRoute";
 import authMiddleware from "./middlewares/authMiddleware";
 import notificationRoute from "./routes/notificationRoute";
+import walletRoute from "./routes/walletRoute";
+import transactionRoute from "./routes/transactionRoute";
+
 
 const app = express();
 const server = http.createServer(app); // Créer un serveur HTTP
@@ -41,6 +44,14 @@ io.on('connection', (socket) => {
     console.log(`User disconnected: ${socket.id}`);
   });
 });
+
+app.use("/api/transaction", transactionRoute);
+
+app.use("/api/wallet", walletRoute);
+
+app.get("/", (req: Request, res: Response) => {
+    res.send("Bienvenue dans notre api wave");
+})
 
 export { server, io };
 

@@ -24,6 +24,7 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
+  CANCELLED  // Ajouter cette ligne
 }
 
 enum TransactionType {
@@ -41,13 +42,13 @@ enum AccountRequestStatus {
 
 model AccountCreationRequest {
   id               String               @id @default(uuid())
-  firstName        String // Prenom
-  lastName         String // Nom
-  phoneNumber      String               @unique // Telephone
-  idCardFrontPhoto String // Photo carte d'identité recto
-  idCardBackPhoto  String // Photo carte d'identité verso
-  createdAt        DateTime             @default(now()) // Date de création
-  status           AccountRequestStatus @default(PENDING) // Statut de la demande
+  firstName        String 
+  lastName         String 
+  phoneNumber      String               @unique
+  idCardFrontPhoto String 
+  idCardBackPhoto  String 
+  createdAt        DateTime             @default(now()) 
+  status           AccountRequestStatus @default(PENDING) 
 
   @@index([phoneNumber])
 }
@@ -132,8 +133,8 @@ model Kyc {
   userId             String    @unique
   documentType       String
   documentNumber     String
-  idCardFrontPhoto   String? // Photo carte d'identité recto
-  idCardBackPhoto    String? // Photo carte d'identité verso
+  idCardFrontPhoto   String? 
+  idCardBackPhoto    String? 
   verificationStatus KycStatus
   verifiedAt         DateTime?
   verificationMethod String?
