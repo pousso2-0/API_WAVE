@@ -3,6 +3,7 @@ import { ContactInterface } from "./ContactInterface";
 import { KycInterface } from "./KycInterface";
 import { NotificationInterface } from "./NotificationInterface";
 import { WalletInterface } from "./WalletInterface";
+import {RoleEnum} from "../enums/RoleEnum";
 
 export interface UserInterface {
     id: string;
@@ -25,4 +26,16 @@ export interface UserInterface {
     kyc?: KycInterface;
     contacts: ContactInterface[];
     contactList: ContactInterface[];
+}
+export interface creatUser{
+    email: string;
+    phoneNumber: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: Date;
+    address?: string;
+    city?: string;
+    country?: string;
+    role: RoleEnum;
 }
