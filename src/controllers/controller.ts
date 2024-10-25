@@ -2,7 +2,9 @@ import { Request, Response } from "express";
 import { PaginationParams } from "../interfaces/PaginationParams";
 import { PaginationResult } from "../interfaces/PaginationResult";
 import { ApiResponse } from "../interfaces/ApiResponse";
-// import { IRequestAuth, RequestAuthUser } from "../interfaces/AuthInterface";
+
+import { IJwtPayload, IRequestAuth } from "../interfaces/AuthInterface";
+import { TimeFrame } from "../types";
 
 export default abstract class Controller {
     protected async trycatch(callback: CallableFunction, res: Response) {
@@ -19,8 +21,8 @@ export default abstract class Controller {
 
     protected getPaginationParams(req: Request): PaginationParams {
         return {
-            page: parseInt(req.query.page as string) + 1,
-            limit: parseInt(req.query.limit as string) + 10,
+            page: parseInt(req.query.page as string) || 1,
+            limit: parseInt(req.query.limit as string) || 10,
         };
     }
 
@@ -52,9 +54,13 @@ export default abstract class Controller {
         };
     }
 
-    // protected getUserRequest(req: Request): RequestAuthUser {
-    //     const authReq = req as IRequestAuth;
-    //     return { user: authReq.user };
-    // }
+    protected getUserRequest(req: Request): IJwtPayload {
+        const authReq = req as IRequestAuth;
+        return authReq.user;
+    }
 
-}
+    protected getTimeFrameParam(req: Request): TimeFrame {
+        return (req.query.timeFrame as TimeFrame) || null;
+    }
+    
+}   
