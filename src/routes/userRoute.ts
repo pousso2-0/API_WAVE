@@ -8,7 +8,7 @@ const userRoute: Router = Router();
 
 setTimeout(() => {
 
-    userRoute.post('/create-agent',authMiddleware, roleMiddleware(['ADMIN']) , userController.createAgent.bind(userController));
+    userRoute.post('/create-agent',authMiddleware , userController.createAgent.bind(userController));
 
 }, 200);
 

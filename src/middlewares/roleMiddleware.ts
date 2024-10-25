@@ -11,16 +11,21 @@ const rolesValides: string[] = [
 ];
 
 export const roleMiddleware = (roles: string[]) => {
+
+    roles = roles.map(role => role.toUpperCase());
+
     // Vérifier si les rôles spécifiés dans le middleware sont tous valides
-    const invalidRoles = roles.filter(role => !rolesValides.includes(role));
+    const invalidRoles = roles.filter((role: string) => !rolesValides.includes(role));
     if (invalidRoles.length > 0) {
         throw new Error(`Rôles invalides spécifiés : ${invalidRoles.join(', ')}`);
     }
 
     return (req: Request, res: Response, next: NextFunction) => {
         const reqAuth: IRequestAuth = req as IRequestAuth;
-        const userRole = reqAuth.user?.role;
-        // Vérifier si le rôle de l'utilisateur est valide et s'il fait partie des rôles autorisés
+        const userRole: string = reqAuth.user?.role.toUpperCase();
+        console.log('voici son role',userRole)
+        console.log(userRole, roles, rolesValides);
+
         if (!userRole || !rolesValides.includes(userRole) || !roles.includes(userRole)) {
             return res.status(403).json({
                 message: 'Accès refusé. Vous n\'avez pas les autorisations nécessaires.',

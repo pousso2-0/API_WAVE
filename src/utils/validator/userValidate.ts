@@ -4,8 +4,8 @@ import {RoleEnum} from "../../enums/RoleEnum";
 // Schéma de validation pour correspondre à l'interface creatUser
 export const createUserSchema = z.object({
     email: z.string().email({ message: "Email invalide" }),
-    phoneNumber: z.string().regex(/^(221)(77|78|76|75)[ ]?\d{7}$/, { message: "Numéro de téléphone invalide" }),
-    password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+    phoneNumber: z.string().regex(/^\+221(77|78|76|75)\d{7}$/, { message: "Numéro de téléphone invalide" }),
+    password: z.string().min(4, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
     firstName: z.string().min(1, { message: "Le prénom est obligatoire" }),
     lastName: z.string().min(1, { message: "Le nom est obligatoire" }),
     dateOfBirth: z.preprocess((arg) => {
