@@ -14,7 +14,11 @@ export const roleMiddleware = (roles: string[]) => {
 
     roles = roles.map(role => role.toUpperCase());
 
+
+    roles = roles.map(role => role.toUpperCase());
+
     // Vérifier si les rôles spécifiés dans le middleware sont tous valides
+    const invalidRoles = roles.filter((role: string) => !rolesValides.includes(role));
     const invalidRoles = roles.filter((role: string) => !rolesValides.includes(role));
     if (invalidRoles.length > 0) {
         throw new Error(`Rôles invalides spécifiés : ${invalidRoles.join(', ')}`);
