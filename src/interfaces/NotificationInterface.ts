@@ -11,5 +11,5 @@ export interface NotificationInterface {
     createdAt: Date;
     readAt?: Date; // Optional
     priority: string;
-    user: UserInterface;
+    user?: UserInterface;
 }

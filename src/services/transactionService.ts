@@ -9,8 +9,8 @@ import { WhereCondition } from "../interfaces/WhereCondition";
 
 class TransactionService {
     private readonly timeFrameConfigs: Record<Exclude<TimeFrame, null>, TimeFrameConfig> = {
-        day: { unit: 'date', value: 1 },
-        week: { unit: 'date', value: 7 },
+        day: { unit: 'date', value: 0 },
+        week: { unit: 'date', value: 6 },
         month: { unit: 'month', value: 1 }
     };
 
@@ -22,7 +22,11 @@ class TransactionService {
         if (!timeFrame) return {};
 
         const now = new Date();
+
+        
         const config = this.timeFrameConfigs[timeFrame];
+
+        
         const startDate = new Date(now);
 
         if (config.unit === 'date') {
@@ -31,8 +35,6 @@ class TransactionService {
             startDate.setMonth(now.getMonth() - config.value);
         }
 
-        console.log(startDate);
-        
         return {
             createdAt: { gte: startDate }
         };
@@ -78,6 +80,8 @@ class TransactionService {
         const timeFrameCondition = this.getTimeFrameWhereCondition(timeFrame);
         const idList = Array.isArray(ids) ? ids : [ids];
         const fieldName = isWalletId ? 'WalletId' : 'userId';
+
+        
 
         return {
             OR: [
