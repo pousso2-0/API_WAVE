@@ -99,6 +99,7 @@ export class WalletService {
     remainingBalance: Prisma.Decimal;
     dailyLimitExceeded?: boolean;
     monthlyLimitExceeded?: boolean;
+    plafondExceeded?: boolean;
   }> {
     const wallet = await this.prisma.wallet.findUnique({
       where: { id: walletId },
@@ -106,13 +107,14 @@ export class WalletService {
         balance: true,
         dailyLimit: true,
         monthlyLimit: true,
+        plafond: true,
       },
     });
-
+  
     if (!wallet) {
       throw new NotFoundException("Portefeuille non trouvé");
     }
-
+  
     // Récupérer toutes les transactions en attente pour ce portefeuille
     const pendingTransactions = await this.prisma.transaction.findMany({
       where: {
@@ -124,19 +126,19 @@ export class WalletService {
         feeAmount: true,
       },
     });
-
+  
     // Calculer le montant total des transactions en attente
     const totalPendingAmount = pendingTransactions.reduce(
       (sum, transaction) =>
         sum.add(transaction.amount).add(transaction.feeAmount),
       new Prisma.Decimal(0)
     );
-
+  
     // Vérifier les limites quotidiennes et mensuelles
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
+  
     const dailyTransactions = await this.prisma.transaction.findMany({
       where: {
         senderWalletId: walletId,
@@ -150,7 +152,7 @@ export class WalletService {
         feeAmount: true,
       },
     });
-
+  
     const monthlyTransactions = await this.prisma.transaction.findMany({
       where: {
         senderWalletId: walletId,
@@ -164,41 +166,57 @@ export class WalletService {
         feeAmount: true,
       },
     });
-
+  
+    // Calculer les totaux en incluant les transactions en attente
     const dailyTotal = dailyTransactions.reduce(
       (sum, transaction) =>
         sum.add(transaction.amount).add(transaction.feeAmount),
       new Prisma.Decimal(0)
     );
-
+  
     const monthlyTotal = monthlyTransactions.reduce(
       (sum, transaction) =>
         sum.add(transaction.amount).add(transaction.feeAmount),
       new Prisma.Decimal(0)
     );
-
+  
     // Ajouter le montant de la nouvelle transaction
     const totalAmount = totalPendingAmount.add(
       new Prisma.Decimal(newTransactionAmount)
     );
-
+  
     // Vérifier toutes les conditions
     const isBalanceSufficient = wallet.balance.gte(totalAmount);
+    
+    // Vérifier le plafond quotidien (incluant les transactions en attente)
+    const dailyTotalWithPending = dailyTotal
+      .add(totalPendingAmount)
+      .add(new Prisma.Decimal(newTransactionAmount));
+    
+    // Vérifier le plafond mensuel (incluant les transactions en attente)
+    const monthlyTotalWithPending = monthlyTotal
+      .add(totalPendingAmount)
+      .add(new Prisma.Decimal(newTransactionAmount));
+  
+    // Vérification des limites avec le plafond
     const dailyLimitExceeded = wallet.dailyLimit
-      ? dailyTotal
-          .add(new Prisma.Decimal(newTransactionAmount))
-          .gt(wallet.dailyLimit)
+      ? dailyTotalWithPending.gt(wallet.dailyLimit)
       : false;
     const monthlyLimitExceeded = wallet.monthlyLimit
-      ? monthlyTotal
-          .add(new Prisma.Decimal(newTransactionAmount))
-          .gt(wallet.monthlyLimit)
+      ? monthlyTotalWithPending.gt(wallet.monthlyLimit)
       : false;
-
+    const plafondExceeded = wallet.plafond
+      ? (dailyTotalWithPending.gt(wallet.plafond) || monthlyTotalWithPending.gt(wallet.plafond))
+      : false;
+  
     const isPossible =
-      isBalanceSufficient && !dailyLimitExceeded && !monthlyLimitExceeded;
+      isBalanceSufficient && 
+      !dailyLimitExceeded && 
+      !monthlyLimitExceeded && 
+      !plafondExceeded;
+      
     const remainingBalance = wallet.balance.sub(totalAmount);
-
+  
     return {
       isPossible,
       currentBalance: wallet.balance,
@@ -206,6 +224,7 @@ export class WalletService {
       remainingBalance,
       dailyLimitExceeded,
       monthlyLimitExceeded,
+      plafondExceeded,
     };
   }
 
