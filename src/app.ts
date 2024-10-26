@@ -7,6 +7,9 @@ import authMiddleware from "./middlewares/authMiddleware";
 import notificationRoute from "./routes/notificationRoute";
 import walletRoute from "./routes/walletRoute";
 import transactionRoute from "./routes/transactionRoute";
+import demandeRoute from "./routes/demandeRoute"; 
+
+
 
 
 const app = express();
@@ -48,6 +51,8 @@ io.on('connection', (socket) => {
 app.use("/api/transaction", transactionRoute);
 
 app.use("/api/wallet", walletRoute);
+app.use("/api/", demandeRoute); 
+
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Bienvenue dans notre api wave");
