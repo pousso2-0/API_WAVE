@@ -10,7 +10,7 @@ export class WalletController extends Controller {
 
     constructor() {
         super(); // Appeler le constructeur de la classe parente
-        this.walletService = new WalletService();
+        this.walletService = WalletService.getInstance(); 
     }
 
     async createWallet(req: Request, res: Response) {
