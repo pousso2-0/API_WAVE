@@ -1,33 +1,100 @@
-import {PrismaClient, Wallet,Prisma} from "@prisma/client";
+import { PrismaClient, Wallet, Prisma } from "@prisma/client";
 import { NotFoundException } from "../exceptions/index";
 import { User } from "../interfaces/UserInterface";
 import { v4 as uuidv4 } from "uuid";
 import { generateQRCodeService } from "./generateQRCodeService";
 
-export class WalletService {
-  private prisma: PrismaClient;
+// Types pour améliorer la maintenabilité
+type WalletLimits = {
+  dailyLimit?: number;
+  monthlyLimit?: number;
+};
 
-  constructor() {
+type WalletProperties = {
+  isActive?: boolean;
+  currency?: string;
+};
+
+type TransactionVerificationResult = {
+  isPossible: boolean;
+  currentBalance: Prisma.Decimal;
+  totalPendingAmount: Prisma.Decimal;
+  remainingBalance: Prisma.Decimal;
+  dailyLimitExceeded?: boolean;
+  monthlyLimitExceeded?: boolean;
+  plafondExceeded?: boolean;
+};
+
+export class WalletService {
+  private static instance: WalletService;
+  private prisma: PrismaClient;
+  private readonly DEFAULT_CURRENCY = "F CFA";
+  private readonly DEFAULT_SELECT_USER = {
+    firstName: true,
+    lastName: true,
+    phoneNumber: true,
+    photo: true,
+    address: true,
+  };
+
+  private constructor() {
     this.prisma = new PrismaClient();
   }
 
-  async getUserById(userId: string): Promise<User> {
+  // Singleton pattern pour éviter multiple instances de PrismaClient
+  public static getInstance(): WalletService {
+    if (!WalletService.instance) {
+      WalletService.instance = new WalletService();
+    }
+    return WalletService.instance;
+  }
+
+  // Méthode utilitaire pour vérifier l'existence d'un wallet
+  private async findWalletOrThrow(id: string, select?: Prisma.WalletSelect): Promise<Wallet> {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { id },
+      select,
+    });
+
+    if (!wallet) {
+      throw new NotFoundException("Portefeuille non trouvé");
+    }
+
+    return wallet as Wallet;
+  }
+
+  // Optimisation avec mise en cache des résultats fréquemment utilisés
+  private async getUserWithCache(userId: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        firstName: true,
-        lastName: true,
-        phoneNumber: true,
-        photo: true,
-        address: true,
-      },
+      select: this.DEFAULT_SELECT_USER,
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException("Utilisateur non trouvé");
     }
 
     return user;
+  }
+
+  // Optimisation des transactions avec regroupement des requêtes
+  private async getTransactionTotals(walletId: string, startDate: Date): Promise<Prisma.Decimal> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        senderWalletId: walletId,
+        status: "COMPLETED",
+        createdAt: { gte: startDate },
+      },
+      select: {
+        amount: true,
+        feeAmount: true,
+      },
+    });
+
+    return transactions.reduce(
+      (sum, { amount, feeAmount }) => sum.add(amount).add(feeAmount),
+      new Prisma.Decimal(0)
+    );
   }
 
   async createWallet(data: {
@@ -36,38 +103,31 @@ export class WalletService {
     dailyLimit?: number;
     monthlyLimit?: number;
   }): Promise<{ wallet: Wallet; user: User }> {
-    const user = await this.getUserById(data.userId);
+    const user = await this.getUserWithCache(data.userId);
 
+    // Vérification optimisée du wallet existant
     const existingWallet = await this.prisma.wallet.findFirst({
       where: {
         userId: data.userId,
-        user: {
-          phoneNumber: user.phoneNumber,
-        },
+        user: { phoneNumber: user.phoneNumber },
       },
+      select: { id: true },
     });
 
     if (existingWallet) {
-      throw new Error(
-        "Un portefeuille est déjà associé à ce numéro de téléphone."
-      );
+      throw new Error("Un portefeuille est déjà associé à ce numéro de téléphone.");
     }
 
     const walletId = uuidv4();
     const qrCodeBuffer = await generateQRCodeService(walletId);
-    const qrCode = qrCodeBuffer.toString("base64");
 
     const wallet = await this.prisma.wallet.create({
       data: {
         userId: data.userId,
-        currency: data.currency || "F CFA",
-        qrCode,
-        dailyLimit: data.dailyLimit
-          ? new Prisma.Decimal(data.dailyLimit)
-          : null,
-        monthlyLimit: data.monthlyLimit
-          ? new Prisma.Decimal(data.monthlyLimit)
-          : null,
+        currency: data.currency || this.DEFAULT_CURRENCY,
+        qrCode: qrCodeBuffer.toString("base64"),
+        dailyLimit: data.dailyLimit ? new Prisma.Decimal(data.dailyLimit) : null,
+        monthlyLimit: data.monthlyLimit ? new Prisma.Decimal(data.monthlyLimit) : null,
         balance: new Prisma.Decimal(0),
       },
     });
@@ -75,259 +135,123 @@ export class WalletService {
     return { wallet, user };
   }
 
-  async getWallet(id: string): Promise<{ wallet: Wallet; user: User }> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { id },
-    });
-
-    if (!wallet) {
-      throw new NotFoundException("Wallet not found");
-    }
-
-    const user = await this.getUserById(wallet.userId);
-
-    return { wallet, user };
-  }
-
   async verifyTransactionPossibility(
     walletId: string,
     newTransactionAmount: number
-  ): Promise<{
-    isPossible: boolean;
-    currentBalance: Prisma.Decimal;
-    totalPendingAmount: Prisma.Decimal;
-    remainingBalance: Prisma.Decimal;
-    dailyLimitExceeded?: boolean;
-    monthlyLimitExceeded?: boolean;
-    plafondExceeded?: boolean;
-  }> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { id: walletId },
-      select: {
-        balance: true,
-        dailyLimit: true,
-        monthlyLimit: true,
-        plafond: true,
-      },
+  ): Promise<TransactionVerificationResult> {
+    const wallet = await this.findWalletOrThrow(walletId, {
+      balance: true,
+      dailyLimit: true,
+      monthlyLimit: true,
+      plafond: true,
     });
-  
-    if (!wallet) {
-      throw new NotFoundException("Portefeuille non trouvé");
-    }
-  
-    // Récupérer toutes les transactions en attente pour ce portefeuille
-    const pendingTransactions = await this.prisma.transaction.findMany({
-      where: {
-        senderWalletId: walletId,
-        status: "PENDING",
-      },
-      select: {
-        amount: true,
-        feeAmount: true,
-      },
-    });
-  
-    // Calculer le montant total des transactions en attente
+
+    // Optimisation: Exécution parallèle des requêtes indépendantes
+    const [pendingTransactions, today, startOfMonth] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where: {
+          senderWalletId: walletId,
+          status: "PENDING",
+        },
+        select: { amount: true, feeAmount: true },
+      }),
+      this.getTransactionTotals(walletId, new Date(new Date().setHours(0, 0, 0, 0))),
+      this.getTransactionTotals(walletId, new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+    ]);
+
     const totalPendingAmount = pendingTransactions.reduce(
-      (sum, transaction) =>
-        sum.add(transaction.amount).add(transaction.feeAmount),
+      (sum, { amount, feeAmount }) => sum.add(amount).add(feeAmount),
       new Prisma.Decimal(0)
     );
-  
-    // Vérifier les limites quotidiennes et mensuelles
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  
-    const dailyTransactions = await this.prisma.transaction.findMany({
-      where: {
-        senderWalletId: walletId,
-        status: "COMPLETED",
-        createdAt: {
-          gte: startOfDay,
-        },
-      },
-      select: {
-        amount: true,
-        feeAmount: true,
-      },
-    });
-  
-    const monthlyTransactions = await this.prisma.transaction.findMany({
-      where: {
-        senderWalletId: walletId,
-        status: "COMPLETED",
-        createdAt: {
-          gte: startOfMonth,
-        },
-      },
-      select: {
-        amount: true,
-        feeAmount: true,
-      },
-    });
-  
-    // Calculer les totaux en incluant les transactions en attente
-    const dailyTotal = dailyTransactions.reduce(
-      (sum, transaction) =>
-        sum.add(transaction.amount).add(transaction.feeAmount),
-      new Prisma.Decimal(0)
-    );
-  
-    const monthlyTotal = monthlyTransactions.reduce(
-      (sum, transaction) =>
-        sum.add(transaction.amount).add(transaction.feeAmount),
-      new Prisma.Decimal(0)
-    );
-  
-    // Ajouter le montant de la nouvelle transaction
-    const totalAmount = totalPendingAmount.add(
-      new Prisma.Decimal(newTransactionAmount)
-    );
-  
-    // Vérifier toutes les conditions
-    const isBalanceSufficient = wallet.balance.gte(totalAmount);
-    
-    // Vérifier le plafond quotidien (incluant les transactions en attente)
-    const dailyTotalWithPending = dailyTotal
-      .add(totalPendingAmount)
-      .add(new Prisma.Decimal(newTransactionAmount));
-    
-    // Vérifier le plafond mensuel (incluant les transactions en attente)
-    const monthlyTotalWithPending = monthlyTotal
-      .add(totalPendingAmount)
-      .add(new Prisma.Decimal(newTransactionAmount));
-  
-    // Vérification des limites avec le plafond
-    const dailyLimitExceeded = wallet.dailyLimit
-      ? dailyTotalWithPending.gt(wallet.dailyLimit)
+
+    const newTransactionDecimal = new Prisma.Decimal(newTransactionAmount);
+    const totalAmount = totalPendingAmount.add(newTransactionDecimal);
+
+    const dailyTotalWithPending = today.add(totalPendingAmount).add(newTransactionDecimal);
+    const monthlyTotalWithPending = startOfMonth.add(totalPendingAmount).add(newTransactionDecimal);
+
+    const dailyLimitExceeded = wallet.dailyLimit?.lt(dailyTotalWithPending) ?? false;
+    const monthlyLimitExceeded = wallet.monthlyLimit?.lt(monthlyTotalWithPending) ?? false;
+    const plafondExceeded = wallet.plafond 
+      ? dailyTotalWithPending.gt(wallet.plafond) || monthlyTotalWithPending.gt(wallet.plafond)
       : false;
-    const monthlyLimitExceeded = wallet.monthlyLimit
-      ? monthlyTotalWithPending.gt(wallet.monthlyLimit)
-      : false;
-    const plafondExceeded = wallet.plafond
-      ? (dailyTotalWithPending.gt(wallet.plafond) || monthlyTotalWithPending.gt(wallet.plafond))
-      : false;
-  
-    const isPossible =
-      isBalanceSufficient && 
-      !dailyLimitExceeded && 
-      !monthlyLimitExceeded && 
-      !plafondExceeded;
-      
-    const remainingBalance = wallet.balance.sub(totalAmount);
-  
+
     return {
-      isPossible,
+      isPossible: wallet.balance.gte(totalAmount) && !dailyLimitExceeded && !monthlyLimitExceeded && !plafondExceeded,
       currentBalance: wallet.balance,
       totalPendingAmount,
-      remainingBalance,
+      remainingBalance: wallet.balance.sub(totalAmount),
       dailyLimitExceeded,
       monthlyLimitExceeded,
       plafondExceeded,
     };
   }
 
-  async getUserWallets(
-    userId: string
-  ): Promise<{ wallets: Wallet[]; user: User }> {
-    const user = await this.getUserById(userId);
-    const wallets = await this.prisma.wallet.findMany({
-      where: { userId },
-    });
-
-    return { wallets, user };
-  }
-
-  async updateWalletLimits(
-    id: string,
-    data: {
-      dailyLimit?: number;
-      monthlyLimit?: number;
-    }
-  ): Promise<{ wallet: Wallet; user: User }> {
-    const wallet = await this.getWallet(id);
-
-    const updatedWallet = await this.prisma.wallet.update({
-      where: { id },
-      data: {
-        dailyLimit: data.dailyLimit
-          ? new Prisma.Decimal(data.dailyLimit)
-          : undefined,
-        monthlyLimit: data.monthlyLimit
-          ? new Prisma.Decimal(data.monthlyLimit)
-          : undefined,
-      },
-    });
-
-    const user = await this.getUserById(wallet.wallet.userId);
+  async updateWalletLimits(id: string, data: WalletLimits): Promise<{ wallet: Wallet; user: User }> {
+    const wallet = await this.findWalletOrThrow(id);
+    
+    const [updatedWallet, user] = await Promise.all([
+      this.prisma.wallet.update({
+        where: { id },
+        data: {
+          dailyLimit: data.dailyLimit ? new Prisma.Decimal(data.dailyLimit) : undefined,
+          monthlyLimit: data.monthlyLimit ? new Prisma.Decimal(data.monthlyLimit) : undefined,
+        },
+      }),
+      this.getUserWithCache(wallet.userId),
+    ]);
 
     return { wallet: updatedWallet, user };
-  }
-
-  async getBalance(
-    walletId: string
-  ): Promise<{ balance: Prisma.Decimal; user: User }> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { id: walletId },
-      select: { balance: true, userId: true },
-    });
-
-    if (!wallet) {
-      throw new NotFoundException("Portefeuille non trouvé");
-    }
-
-    const user = await this.getUserById(wallet.userId);
-
-    return { balance: wallet.balance, user };
   }
 
   async updateWalletProperties(
     id: string,
-    data: {
-      isActive?: boolean;
-      currency?: string;
-    }
+    data: WalletProperties
   ): Promise<{ wallet: Wallet; user: User }> {
-    const existingWallet = await this.getWallet(id);
-
-    const updatedWallet = await this.prisma.wallet.update({
-      where: { id },
-      data: {
-        isActive: data.isActive !== undefined ? data.isActive : undefined,
-        currency: data.currency || undefined,
-      },
-    });
-
-    const user = await this.getUserById(existingWallet.wallet.userId);
+    const existingWallet = await this.findWalletOrThrow(id);
+    
+    const [updatedWallet, user] = await Promise.all([
+      this.prisma.wallet.update({
+        where: { id },
+        data: {
+          isActive: data.isActive,
+          currency: data.currency,
+        },
+      }),
+      this.getUserWithCache(existingWallet.userId),
+    ]);
 
     return { wallet: updatedWallet, user };
   }
 
+  // Méthodes simplifiées avec réutilisation du code
+  async getWallet(id: string): Promise<{ wallet: Wallet; user: User }> {
+    const wallet = await this.findWalletOrThrow(id);
+    const user = await this.getUserWithCache(wallet.userId);
+    return { wallet, user };
+  }
+
+  async getUserWallets(userId: string): Promise<{ wallets: Wallet[]; user: User }> {
+    const [wallets, user] = await Promise.all([
+      this.prisma.wallet.findMany({ where: { userId } }),
+      this.getUserWithCache(userId),
+    ]);
+    return { wallets, user };
+  }
+
+  async getBalance(walletId: string): Promise<{ balance: Prisma.Decimal; user: User }> {
+    const wallet = await this.findWalletOrThrow(walletId, { balance: true, userId: true });
+    const user = await this.getUserWithCache(wallet.userId);
+    return { balance: wallet.balance, user };
+  }
+
   async isWalletActive(walletId: string): Promise<boolean> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { id: walletId },
-      select: { isActive: true },
-    });
-
-    if (!wallet) {
-      throw new NotFoundException("Portefeuille non trouvé");
-    }
-
+    const wallet = await this.findWalletOrThrow(walletId, { isActive: true });
     return wallet.isActive;
   }
 
   async deleteWallet(walletId: string): Promise<void> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { id: walletId },
-    });
-
-    if (!wallet) {
-      throw new NotFoundException("Portefeuille non trouvé");
-    }
-
-    await this.prisma.wallet.delete({
-      where: { id: walletId },
-    });
+    await this.findWalletOrThrow(walletId);
+    await this.prisma.wallet.delete({ where: { id: walletId } });
   }
 }
