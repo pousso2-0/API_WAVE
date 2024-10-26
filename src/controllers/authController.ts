@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { IRequestAuth } from "../interfaces/AuthInterface";
 import { blacklistToken } from "../security/blackList";
+import { log } from "console";
 
 export default new class authController {
 
@@ -21,6 +22,7 @@ export default new class authController {
 
         try {
 
+            console.log("teste" , phone, password);
             const user = await userService.phoneExist(phone);        
 
             if (!user) {

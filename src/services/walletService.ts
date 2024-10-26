@@ -1,4 +1,4 @@
-import { PrismaClient, Wallet, Prisma } from "@prisma/client";
+import {PrismaClient, Wallet,Prisma} from "@prisma/client";
 import { NotFoundException } from "../exceptions/index";
 import { User } from "../interfaces/UserInterface";
 import { v4 as uuidv4 } from "uuid";
@@ -32,13 +32,12 @@ export class WalletService {
 
   async createWallet(data: {
     userId: string;
-    currency?: string; // Rendre currency optionnel
+    currency?: string;
     dailyLimit?: number;
     monthlyLimit?: number;
   }): Promise<{ wallet: Wallet; user: User }> {
     const user = await this.getUserById(data.userId);
 
-    // Vérifiez si l'utilisateur a déjà un portefeuille associé à son numéro de téléphone
     const existingWallet = await this.prisma.wallet.findFirst({
       where: {
         userId: data.userId,
@@ -88,6 +87,126 @@ export class WalletService {
     const user = await this.getUserById(wallet.userId);
 
     return { wallet, user };
+  }
+
+  async verifyTransactionPossibility(
+    walletId: string,
+    newTransactionAmount: number
+  ): Promise<{
+    isPossible: boolean;
+    currentBalance: Prisma.Decimal;
+    totalPendingAmount: Prisma.Decimal;
+    remainingBalance: Prisma.Decimal;
+    dailyLimitExceeded?: boolean;
+    monthlyLimitExceeded?: boolean;
+  }> {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { id: walletId },
+      select: {
+        balance: true,
+        dailyLimit: true,
+        monthlyLimit: true,
+      },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException("Portefeuille non trouvé");
+    }
+
+    // Récupérer toutes les transactions en attente pour ce portefeuille
+    const pendingTransactions = await this.prisma.transaction.findMany({
+      where: {
+        senderWalletId: walletId,
+        status: "PENDING",
+      },
+      select: {
+        amount: true,
+        feeAmount: true,
+      },
+    });
+
+    // Calculer le montant total des transactions en attente
+    const totalPendingAmount = pendingTransactions.reduce(
+      (sum, transaction) =>
+        sum.add(transaction.amount).add(transaction.feeAmount),
+      new Prisma.Decimal(0)
+    );
+
+    // Vérifier les limites quotidiennes et mensuelles
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const dailyTransactions = await this.prisma.transaction.findMany({
+      where: {
+        senderWalletId: walletId,
+        status: "COMPLETED",
+        createdAt: {
+          gte: startOfDay,
+        },
+      },
+      select: {
+        amount: true,
+        feeAmount: true,
+      },
+    });
+
+    const monthlyTransactions = await this.prisma.transaction.findMany({
+      where: {
+        senderWalletId: walletId,
+        status: "COMPLETED",
+        createdAt: {
+          gte: startOfMonth,
+        },
+      },
+      select: {
+        amount: true,
+        feeAmount: true,
+      },
+    });
+
+    const dailyTotal = dailyTransactions.reduce(
+      (sum, transaction) =>
+        sum.add(transaction.amount).add(transaction.feeAmount),
+      new Prisma.Decimal(0)
+    );
+
+    const monthlyTotal = monthlyTransactions.reduce(
+      (sum, transaction) =>
+        sum.add(transaction.amount).add(transaction.feeAmount),
+      new Prisma.Decimal(0)
+    );
+
+    // Ajouter le montant de la nouvelle transaction
+    const totalAmount = totalPendingAmount.add(
+      new Prisma.Decimal(newTransactionAmount)
+    );
+
+    // Vérifier toutes les conditions
+    const isBalanceSufficient = wallet.balance.gte(totalAmount);
+    const dailyLimitExceeded = wallet.dailyLimit
+      ? dailyTotal
+          .add(new Prisma.Decimal(newTransactionAmount))
+          .gt(wallet.dailyLimit)
+      : false;
+    const monthlyLimitExceeded = wallet.monthlyLimit
+      ? monthlyTotal
+          .add(new Prisma.Decimal(newTransactionAmount))
+          .gt(wallet.monthlyLimit)
+      : false;
+
+    const isPossible =
+      isBalanceSufficient && !dailyLimitExceeded && !monthlyLimitExceeded;
+    const remainingBalance = wallet.balance.sub(totalAmount);
+
+    return {
+      isPossible,
+      currentBalance: wallet.balance,
+      totalPendingAmount,
+      remainingBalance,
+      dailyLimitExceeded,
+      monthlyLimitExceeded,
+    };
   }
 
   async getUserWallets(
