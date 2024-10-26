@@ -38,8 +38,22 @@ export interface creatUser{
     city?: string;
     country?: string;
     role: RoleEnum;
+    kycStatus?: KycStatus;
+    isVerified?: boolean;
 }
 
+
+export interface CreateUserKyc extends creatUser {
+    kyc?: {
+        documentType: string;
+        documentNumber: string;
+        idCardFrontPhoto: string;
+        idCardBackPhoto: string;
+        verificationStatus: KycStatus;
+        verificationMethod?: string;
+        rejectionReason?: string;
+    }
+}
 export interface User {
     firstName: string;
     lastName: string;
@@ -47,3 +61,17 @@ export interface User {
     photo: string | null; // Permettre null
     address: string | null; // Permettre null
 }
+
+export const userIncludes = {
+    wallets: {
+        include: {
+            user: true, // Inclure l'objet user
+            sentTransactions: true,
+            receivedTransactions: true,
+        },
+    },
+    notifications: true,
+    kyc: true,
+    contacts: true,
+    contactList: true,
+};

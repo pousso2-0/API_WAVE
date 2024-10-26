@@ -8,7 +8,9 @@ const userRoute: Router = Router();
 
 setTimeout(() => {
 
-    userRoute.post('/create-agent',authMiddleware , userController.createAgent.bind(userController));
+    userRoute.post('/create-agent',authMiddleware , userController.createAgentOrAdmin.bind(userController));
+    userRoute.get('/dmande/:id', userController.DmandeParseData.bind(userController));
+
 
 }, 200);
 

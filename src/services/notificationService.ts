@@ -41,7 +41,7 @@ class NotificationService {
     }
   }
 
-  async notifySignUpWithConfirmationCode(userId: string, code: number) {
+  async notifySignUpWithConfirmationCode(userId: string, code: string) {
     await this.userExist(userId);
     const content = `Veuillez confirmer votre inscription avec le code ${code}`;
     await this.sendNotification(

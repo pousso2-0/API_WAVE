@@ -1,11 +1,12 @@
 import { z } from 'zod';
-import {RoleEnum} from "../../enums/RoleEnum";
+import { RoleEnum } from "../enums/RoleEnum";
+import { KycStatus } from "../enums/KycStatus";
 
-// Schéma de validation pour correspondre à l'interface creatUser
+// Schéma de base pour la création d'utilisateur
 export const createUserSchema = z.object({
     email: z.string().email({ message: "Email invalide" }),
     phoneNumber: z.string().regex(/^\+221(77|78|76|75)\d{7}$/, { message: "Numéro de téléphone invalide" }),
-    password: z.string().min(4, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+    password:  z.string().length(4, "Le mot de passe doit contenir exactement 4 caractères"),
     firstName: z.string().min(1, { message: "Le prénom est obligatoire" }),
     lastName: z.string().min(1, { message: "Le nom est obligatoire" }),
     dateOfBirth: z.preprocess((arg) => {
@@ -16,6 +17,26 @@ export const createUserSchema = z.object({
     country: z.string().optional(),
     role: z.nativeEnum(RoleEnum, { message: "Rôle invalide" }),
 });
+
+// Schéma pour les données KYC
+export const kycSchema = z.object({
+    documentType: z.string().min(1, { message: "Le type de document est obligatoire" }),
+    documentNumber: z.string().min(1, { message: "Le numéro de document est obligatoire" }),
+    idCardFrontPhoto: z.string().url({ message: "L'URL de la photo recto de la pièce d'identité est invalide" }),
+    idCardBackPhoto: z.string().url({ message: "L'URL de la photo verso de la pièce d'identité est invalide" }),
+    verificationStatus: z.nativeEnum(KycStatus, { message: "Statut de vérification invalide" }),
+    verificationMethod: z.string().optional(),
+    rejectionReason: z.string().optional(),
+});
+
+// Schéma combiné pour la création d'utilisateur avec KYC par un agent
+export const createUserWithKycSchema = createUserSchema.extend({
+    kyc: kycSchema.optional()
+});
+
+// Type inféré du schéma pour l'utilisation dans le code
+export type CreateUserWithKyc = z.infer<typeof createUserWithKycSchema>;
+
 // Schéma de validation pour la vérification de l'OTP
 export const verifyOtpSchema = z.object({
     userId: z.string().uuid({ message: "ID utilisateur invalide" }),
@@ -32,7 +53,7 @@ export const loginSchema = z.object({
 export const resetPasswordSchema = z.object({
     phoneNumber: z.string().regex(/^(221)(77|78|76|75)[ ]?\d{7}$/, { message: "Numéro de téléphone invalide" }),
     otp: z.number().min(100000, { message: "Code OTP incorrect" }).max(999999, { message: "Code OTP incorrect" }),
-    newPassword: z.string().min(6, { message: "Le nouveau mot de passe doit contenir au moins 6 caractères" }),
+    newPassword:  z.string().length(4, "Le mot de passe doit contenir exactement 4 caractères"),
 });
 
 // Schéma de validation pour la génération d'un OTP pour réinitialiser le mot de passe

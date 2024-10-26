@@ -9,6 +9,9 @@ import userRoute from "./routes/userRoute";
 import notificationRoute from "./routes/notificationRoute";
 import walletRoute from "./routes/walletRoute";
 import transactionRoute from "./routes/transactionRoute";
+import demandeRoute from "./routes/demandeRoute";
+import proccessRoute from "./routes/accountJobRoute";
+import activeRoute from "./routes/accountActiveRoute";
 
 
 const app = express();
@@ -28,6 +31,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/notification", notificationRoute);
+app.use("/api/demande", demandeRoute);
+app.use("/api/job", proccessRoute);
+app.use("/api/active", activeRoute);
 
 app.get("/", authMiddleware, (req: Request, res: Response) => {
   res.send("Bienvenue dans notre api wave");
