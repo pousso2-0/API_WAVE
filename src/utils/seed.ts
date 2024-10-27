@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { fa, faker } from '@faker-js/faker';
 import hashService from '../security/hashService';
 import { generateQRCodeService } from '../services/generateQRCodeService';
+import { RoleEnum } from '../enums/RoleEnum';
 
 const prisma = new PrismaClient();
 
@@ -63,7 +64,7 @@ async function createUsers(count: number) {
                     ],
                 },
             },
-            include: { wallets: true },
+            include: { wallets: true, role: true },
         });
 
         users.push(user);
@@ -79,19 +80,22 @@ async function createTransactions(users: any[]) {
         const sender = faker.helpers.arrayElement(users);
         const receiver = faker.helpers.arrayElement(users.filter(u => u.id !== sender.id));
 
-        const transaction = await prisma.transaction.create({
-            data: {
-                senderWalletId: sender.wallets[0].id,
-                receiverWalletId: receiver.wallets[0].id,
-                amount: faker.number.int({ min: 1, max: 500 }),
-                currency: 'USD',
-                status: 'COMPLETED',
-                type: 'TRANSFERE',
-                reference: faker.string.uuid(),
-            },
-        });
-
-        transactions.push(transaction);
+        if(sender.role.name != RoleEnum.ADMIN && receiver.role.name != RoleEnum.ADMIN){
+            const transaction = await prisma.transaction.create({
+                data: {
+                    senderWalletId: sender.wallets[0].id,
+                    receiverWalletId: receiver.wallets[0].id,
+                    amount: faker.number.int({ min: 1, max: 500 }),
+                    currency: 'USD',
+                    status: 'COMPLETED',
+                    type: 'TRANSFERE',
+                    reference: faker.string.uuid(),
+                },
+            });
+    
+            transactions.push(transaction);
+        }
+     
     }
 
     return transactions;
