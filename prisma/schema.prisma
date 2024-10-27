@@ -24,7 +24,6 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
-  CANCELLED  // Ajouter cette ligne
 }
 
 enum TransactionType {
