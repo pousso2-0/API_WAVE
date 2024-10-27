@@ -46,6 +46,10 @@ export default abstract class Controller {
         };
     }
 
+    protected createSuccesResponse(message: string, data: any): ApiResponse<any> {
+        return { data, message, error: false }
+    }
+
     protected createErrorResponse(message: string): ApiResponse<null> {
         return {
             data: null,
@@ -62,5 +66,5 @@ export default abstract class Controller {
     protected getTimeFrameParam(req: Request): TimeFrame {
         return (req.query.timeFrame as TimeFrame) || null;
     }
-    
+
 }   

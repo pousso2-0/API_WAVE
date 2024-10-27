@@ -18,6 +18,18 @@ class TransactionController extends Controller {
         return wallet?.userId === userAuth.userId;
     }
 
+    private async checkTransactionAccess(
+        transactionId: string,
+        req: Request
+    ): Promise<boolean> {
+        const userAuth = this.getUserRequest(req);
+
+        if (userAuth.role === RoleEnum.ADMIN) return true;
+
+        const transaction = await transactionService.getById(transactionId);
+        return transaction?.id === userAuth.userId;
+    }
+
     public async getAll(req: Request, res: Response) {
         return this.trycatch(async () => {
             const params = this.getPaginationParams(req);
@@ -27,7 +39,7 @@ class TransactionController extends Controller {
                 params.page,
                 params.limit,
                 timeFrame
-            );  
+            );
 
             const response = this.createPaginatedResponse(
                 result,
@@ -100,6 +112,25 @@ class TransactionController extends Controller {
             return res.status(200).json(response);
         }, res);
     }
+
+    public async getByid(req: Request, res: Response) {
+        return this.trycatch(async () => {
+            const userAuth = this.getUserRequest(req);
+            const id: string = req.params.id;
+            const transaction = transactionService.getById(id);
+
+            if (userAuth.role !== RoleEnum.ADMIN && await this.checkTransactionAccess(id, req)) {
+                const errorResponse = this.createErrorResponse(
+                    "Vous n'êtes pas autorisé à voir ces transactions"
+                );
+                return res.status(403).json(errorResponse);
+            }
+            if (!transaction)
+                return res.status(404).json(this.createErrorResponse(`La transaction avec l'id: ${id} n'exist pas`));
+            return res.status(200).json(this.createSuccesResponse(`La transaction avec l'id: ${id}`, transaction));
+        }, res);
+    }
+
 }
 
 export default new TransactionController();
