@@ -6,9 +6,22 @@ export interface KycInterface {
     userId: string;
     documentType: string;
     documentNumber: string;
+    idCardFrontPhoto: string;
+    idCardBackPhoto: string;
     verificationStatus: KycStatus;
     verifiedAt?: Date; // Optional
     verificationMethod?: string; // Optional
     rejectionReason?: string; // Optional
     user: UserInterface;
+}
+export interface KycCreate {
+    userId: string;
+    documentType: string;
+    documentNumber: string;
+    idCardFrontPhoto: string;
+    idCardBackPhoto: string;
+    verificationStatus: KycStatus;
+    verifiedAt?: Date; // Optional
+    verificationMethod?: string; // Optional
+    rejectionReason?: string; // Optional
 }
