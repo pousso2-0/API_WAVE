@@ -23,10 +23,10 @@ class TransactionService {
 
         const now = new Date();
 
-        
+
         const config = this.timeFrameConfigs[timeFrame];
 
-        
+
         const startDate = new Date(now);
 
         if (config.unit === 'date') {
@@ -81,7 +81,7 @@ class TransactionService {
         const idList = Array.isArray(ids) ? ids : [ids];
         const fieldName = isWalletId ? 'WalletId' : 'userId';
 
-        
+
 
         return {
             OR: [
@@ -149,6 +149,10 @@ class TransactionService {
         return prisma.wallet.findUnique({
             where: { id }
         });
+    }
+
+    public async getById(id: string) {
+        return prisma.transaction.findFirst({ where: { id } });
     }
 }
 
