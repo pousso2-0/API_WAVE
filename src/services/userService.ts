@@ -89,17 +89,7 @@ class UserService {
 
                     await kycService.createKyc(kycData);
                 }
-                const data = {
-                    userId: user.id,
-                    balance: 0,
-                    currency: "F CFA",
-                    dailyLimit: 100000,
-                    monthlyLimit: 1000000,
-                }
-
-                // Créer le wallet
-                const getInstance = new WalletService()
-                await getInstance.createWallet(data)
+                
 
                 // Récupérer l'utilisateur avec ses données KYC
                 const userWithKyc = await prisma.user.findUnique({
