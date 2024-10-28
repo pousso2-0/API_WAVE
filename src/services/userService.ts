@@ -31,7 +31,7 @@ class UserService {
                     passwordHash: await HashService.hash(data.password),
                     roleId,
                     isVerified: data.isVerified ?? false,
-                    isActive: false,
+                    isActive: data.isActive ?? false,
                     kycStatus: data.kycStatus ?? KycStatus.PENDING,
                 },
             });

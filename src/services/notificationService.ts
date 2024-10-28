@@ -43,7 +43,7 @@ class NotificationService {
 
   async notifySignUpWithConfirmationCode(userId: string, code: string) {
     await this.userExist(userId);
-    const content = `Veuillez confirmer votre inscription avec le code ${code}`;
+    const content = `Veuillez acceder a votre compte Wave avec le code ${code} ne le partager avec personne`;
     await this.sendNotification(
       userId,
       NotificationType.INFO,

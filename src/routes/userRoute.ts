@@ -18,7 +18,7 @@ setTimeout(() => {
     userRoute.get('/:id', authMiddleware, userController.getUserById.bind(userController));
 
     // Route pour lister les utilisateurs avec un filtre optionnel par rôle
-    userRoute.get('/', userController.listUsers.bind(userController));
+    userRoute.get('/',authMiddleware, userController.listUsers.bind(userController));
 
     // Route pour supprimer un utilisateur
     userRoute.delete('/:id', authMiddleware,  userController.deleteUser.bind(userController));
