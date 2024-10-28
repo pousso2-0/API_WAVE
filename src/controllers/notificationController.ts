@@ -2,6 +2,7 @@
 
 import { Request, Response } from "express";
 import NotificationService from "../services/notificationService";
+import { IRequestAuth } from "../interfaces/AuthInterface";
 
 class NotificationController {
   async notifySignUpWithConfirmationCode(req: Request, res: Response) {
@@ -48,6 +49,18 @@ class NotificationController {
       res.status(200).json({ message: "Notification de retrait envoyée" });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  async getAllNotification(req: Request, res: Response){
+    try {
+      const currentUser = (req as IRequestAuth).user;
+      await NotificationService.getAllNotification(currentUser.userId);
+      res.status(200).json({message : "All notification current user"});
+    } catch(error){
+      res.status(500).json({
+        error: (error as Error).message
+      })
     }
   }
 }

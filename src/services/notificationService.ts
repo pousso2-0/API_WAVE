@@ -73,7 +73,7 @@ class NotificationService {
       contentSender
     );
 
-    const contentReceiver = ` Vous avez reÇu  ${amount}F De ${sender.firstName} ${sender.lastName} (${receiver.phoneNumber}) Nouveau solde: ${totalBalanceReceiver}F +infos: 200600 Avec WDF ${idTransaction}`;
+    const contentReceiver = ` Vous avez reÇu  ${amount}F De ${sender.firstName} ${sender.lastName} (${sender.phoneNumber}) Nouveau solde: ${totalBalanceReceiver}F +infos: 200600 Avec WDF ${idTransaction}`;
     await this.sendNotification(
       idReceiver,
       NotificationType.INFO,
@@ -85,6 +85,8 @@ class NotificationService {
       `Transaction réussie : ${amount} transféré de ${sender.firstName} à ${receiver.firstName}`
     );
   }
+
+
 
   async notifyDepositAtAgency(
     userId: string,
@@ -130,6 +132,12 @@ class NotificationService {
       `Notification de retrait envoyée à ${user.firstName} ${user.lastName} pour un retrait de ${amount} à ${agencyName}`
     );
   }
+
+
+    async getAllNotification(userId:string){
+
+      return await prisma.notification.findMany({where: {id : userId}});
+    }
 
   private async userExist(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });

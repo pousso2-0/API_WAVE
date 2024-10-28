@@ -1,0 +1,4 @@
+export enum DocumentType {
+  CARTE_IDENTITE="CARTE_IDENTITE",
+  PASSEPORT="PASSPORT"
+}

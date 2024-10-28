@@ -8,6 +8,8 @@ npm install --save-dev @types/socket.io
 npm install axios
 npm install twilio
 npm install infobip
+npm install cloudinary
+npm install express multer
 
 #mg
 npm install uuid

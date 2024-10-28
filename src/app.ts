@@ -7,6 +7,7 @@ import authMiddleware from "./middlewares/authMiddleware";
 import notificationRoute from "./routes/notificationRoute";
 import walletRoute from "./routes/walletRoute";
 import transactionRoute from "./routes/transactionRoute";
+import kycRoute from "./routes/kycRoute";
 
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoute);
 app.use("/api/notification", notificationRoute);
+app.use("/api/kyc", kycRoute)
 
 app.get("/", authMiddleware, (req: Request, res: Response) => {
   res.send("Bienvenue dans notre api wave");

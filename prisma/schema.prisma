@@ -20,6 +20,11 @@ enum KycStatus {
   REJECTED
 }
 
+enum DocumentType {
+  CARTE_IDENTITE
+  PASSEPORT
+}
+
 enum TransactionStatus {
   PENDING
   COMPLETED
@@ -40,15 +45,16 @@ enum AccountRequestStatus {
   REJECTED // Rejeté
 }
 
+
 model AccountCreationRequest {
   id               String               @id @default(uuid())
-  firstName        String 
-  lastName         String 
+  firstName        String
+  lastName         String
   phoneNumber      String               @unique
-  idCardFrontPhoto String 
-  idCardBackPhoto  String 
-  createdAt        DateTime             @default(now()) 
-  status           AccountRequestStatus @default(PENDING) 
+  idCardFrontPhoto String
+  idCardBackPhoto  String
+  createdAt        DateTime             @default(now())
+  status           AccountRequestStatus @default(PENDING)
 
   @@index([phoneNumber])
 }
@@ -128,18 +134,19 @@ model Transaction {
   @@index([receiverWalletId])
 }
 
+
 model Kyc {
-  id                 String    @id @default(uuid())
-  userId             String    @unique
-  documentType       String
-  documentNumber     String
-  idCardFrontPhoto   String? 
-  idCardBackPhoto    String? 
-  verificationStatus KycStatus
+  id                 String       @id @default(uuid())
+  userId             String       @unique
+  documentType       DocumentType
+  documentNumber     String?
+  idCardFrontPhoto   String?
+  idCardBackPhoto    String?
+  verificationStatus  KycStatus
   verifiedAt         DateTime?
-  verificationMethod String?
-  rejectionReason    String?
-  user               User      @relation(fields: [userId], references: [id])
+  verificationMethod  String?
+  rejectionReason     String?
+  user               User         @relation(fields: [userId], references: [id])
 }
 
 model Notification {
