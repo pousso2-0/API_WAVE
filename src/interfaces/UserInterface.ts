@@ -40,6 +40,7 @@ export interface creatUser{
     role: RoleEnum;
     kycStatus?: KycStatus;
     isVerified?: boolean;
+    isActive?: boolean;
 }
 
 
