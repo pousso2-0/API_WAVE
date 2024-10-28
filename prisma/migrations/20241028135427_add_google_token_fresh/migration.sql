@@ -5,10 +5,37 @@ CREATE TYPE "NotificationType" AS ENUM ('INFO', 'WARNING', 'ERROR', 'SUCCESS');
 CREATE TYPE "KycStatus" AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED');
+CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "TransactionType" AS ENUM ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER', 'INVOICE');
+CREATE TYPE "TransactionType" AS ENUM ('DEPOSIT', 'WITHDRAWAL', 'TRANSFERE', 'INVOICE');
+
+-- CreateEnum
+CREATE TYPE "AccountRequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+-- CreateTable
+CREATE TABLE "AccountCreationRequest" (
+    "id" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "phoneNumber" TEXT NOT NULL,
+    "idCardFrontPhoto" TEXT NOT NULL,
+    "idCardBackPhoto" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "status" "AccountRequestStatus" NOT NULL DEFAULT 'PENDING',
+    "processed" BOOLEAN NOT NULL DEFAULT false,
+    "email" TEXT,
+
+    CONSTRAINT "AccountCreationRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Role" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Role_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -20,6 +47,7 @@ CREATE TABLE "User" (
     "lastName" TEXT NOT NULL,
     "dateOfBirth" TIMESTAMP(3) NOT NULL,
     "address" TEXT,
+    "photo" TEXT,
     "city" TEXT,
     "country" TEXT,
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
@@ -27,6 +55,9 @@ CREATE TABLE "User" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "kycStatus" "KycStatus" NOT NULL DEFAULT 'PENDING',
+    "roleId" TEXT NOT NULL,
+    "googleAccessToken" TEXT,
+    "googleRefreshToken" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -43,6 +74,7 @@ CREATE TABLE "Wallet" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "dailyLimit" DECIMAL(20,2),
     "monthlyLimit" DECIMAL(20,2),
+    "plafond" DECIMAL(20,2) DEFAULT 200000,
 
     CONSTRAINT "Wallet_pkey" PRIMARY KEY ("id")
 );
@@ -72,6 +104,8 @@ CREATE TABLE "Kyc" (
     "userId" TEXT NOT NULL,
     "documentType" TEXT NOT NULL,
     "documentNumber" TEXT NOT NULL,
+    "idCardFrontPhoto" TEXT,
+    "idCardBackPhoto" TEXT,
     "verificationStatus" "KycStatus" NOT NULL,
     "verifiedAt" TIMESTAMP(3),
     "verificationMethod" TEXT,
@@ -108,6 +142,18 @@ CREATE TABLE "Contact" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "AccountCreationRequest_phoneNumber_key" ON "AccountCreationRequest"("phoneNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AccountCreationRequest_email_key" ON "AccountCreationRequest"("email");
+
+-- CreateIndex
+CREATE INDEX "AccountCreationRequest_phoneNumber_idx" ON "AccountCreationRequest"("phoneNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
@@ -142,6 +188,9 @@ CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "cr
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Contact_userId_contactId_key" ON "Contact"("userId", "contactId");
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
