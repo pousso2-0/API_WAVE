@@ -9,6 +9,7 @@ import KycService from "./kycService";
 import { KycCreate } from "../interfaces/KycInterface";
 import { extractTextFromImage, parseIdentityData } from "../config/vision";
 import { generateTemporaryPassword } from "../utils/generatePassword";
+import {WalletService} from "./walletService";
 
 interface ProcessingResult {
     success: boolean;
@@ -89,7 +90,18 @@ class AccountJobService {
                         rejectionReason: ""
                     };
 
-                    await KycService.createKyc(kycData);
+                     await KycService.createKyc(kycData);
+                     const data = {
+                         userId: createdUser.id,
+                         balance: 0,
+                         currency: "F CFA",
+                         dailyLimit: 100000,
+                         monthlyLimit: 1000000,
+                     }
+
+                     // Créer le wallet
+                    const getInstance = new WalletService()
+                  await getInstance.createWallet(data)
 
                     // Marquer la demande comme traitée
                     await prismaTransaction.accountCreationRequest.update({
