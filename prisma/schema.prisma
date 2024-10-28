@@ -84,6 +84,8 @@ model User {
   contacts      Contact[]      @relation("UserContacts")
   contactList   Contact[]      @relation("ContactList")
   roleId        String
+  googleAccessToken  String?
+  googleRefreshToken String?
   role          Role           @relation(fields: [roleId], references: [id])
 
   @@index([phoneNumber])
