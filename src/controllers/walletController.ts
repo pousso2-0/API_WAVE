@@ -17,7 +17,7 @@ export class WalletController extends Controller {
         const validatedData = validateRequest(createWalletSchema, req.body);
 
         await this.trycatch(async () => {
-            const wallet = await this.walletService.createWallet(validatedData, currency, dailyLimit, monthlyLimit);
+            const wallet = await this.walletService.createWallet(validatedData);
             const response: ApiResponse<typeof wallet> = {
                 data: wallet,
                 message: 'Portefeuille créé avec succès',

@@ -8,9 +8,9 @@ import kycService from "./kycService";
 import {KycCreate} from "../interfaces/KycInterface";
 import {extractTextFromImage, parseIdentityData} from "../config/vision";
 import bcrypt from "bcryptjs";
-import {WalletService} from "./walletService";
 
 class UserService {
+
     async phoneExist(phone: string): Promise<User | null> {
         return prisma.user.findUnique({ where: { phoneNumber: phone }, include: { role: true } });
     }
@@ -19,37 +19,45 @@ class UserService {
     async createUser(data: creatUser): Promise<User> {
         const roleId = await this.getRoleId(data.role);
 
+        // Commencez la transaction avec Prisma
         try {
-            const user = await prisma.user.create({
-                data: {
-                    email: data.email,
-                    firstName: data.firstName,
-                    lastName: data.lastName,
-                    dateOfBirth: data.dateOfBirth,
-                    address: data.address,
-                    city: data.city,
-                    country: data.country,
-                    phoneNumber: data.phoneNumber,
-                    passwordHash: await HashService.hash(data.password),
-                    roleId,
-                    isVerified: data.isVerified ?? false,
-                    isActive: data.isActive ?? false,
-                    kycStatus: data.kycStatus ?? KycStatus.PENDING,
-                },
+            const result = await prisma.$transaction(async (prisma) => {
+                // Créer l'utilisateur
+                const user = await prisma.user.create({
+                    data: {
+                        email: data.email,
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        dateOfBirth: data.dateOfBirth,
+                        address: data.address,
+                        city: data.city,
+                        country: data.country,
+                        phoneNumber: data.phoneNumber,
+                        passwordHash: await HashService.hash(data.password),
+                        roleId,
+                        isVerified: data.isVerified ?? false,
+                        isActive: data.isActive ?? false,
+                        kycStatus: data.kycStatus ?? KycStatus.PENDING,
+                    },
+                });
+
+                console.log(`User created with ID: ${user.id}`);
+
+                return user;
             });
 
-            console.log(`User created with ID: ${user.id}`);
-            return user;
-        } catch (error: any) { // Utilisez 'any' ou 'unknown' et gérez-le correctement
+            return result; // Retourner l'utilisateur créé si tout réussit
+        } catch (error: any) {
             if (error.code === 'P2002') {
                 console.error(`User with phone number ${data.phoneNumber} already exists`);
                 throw new Error(`User with phone number ${data.phoneNumber} already exists`);
             } else {
-                console.error('Error creating user:', error);
-                throw new Error('Error creating user');
+                console.error('Error creating user and wallet:', error);
+                throw new Error('Error creating user and wallet');
             }
         }
     }
+
 
     async getRoleId(role: RoleEnum) {
         const roleRecord = await prisma.role.findUnique({
@@ -89,17 +97,6 @@ class UserService {
 
                     await kycService.createKyc(kycData);
                 }
-                const data = {
-                    userId: user.id,
-                    balance: 0,
-                    currency: "F CFA",
-                    dailyLimit: 100000,
-                    monthlyLimit: 1000000,
-                }
-
-                // Créer le wallet
-                const getInstance = new WalletService()
-                await getInstance.createWallet(data)
 
                 // Récupérer l'utilisateur avec ses données KYC
                 const userWithKyc = await prisma.user.findUnique({
