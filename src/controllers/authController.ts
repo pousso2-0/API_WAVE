@@ -18,6 +18,7 @@ export default new class authController {
 
     async login(req: Request, res: Response) {
         const { phone, password } = req.body;
+        console.log(phone, password);
 
         try {
 

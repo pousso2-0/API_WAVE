@@ -1,12 +1,13 @@
 import prisma from "../config/prisma";
 import {RoleEnum} from "../enums/RoleEnum";
-import {CreateUserKyc, creatUser, userIncludes} from "../interfaces/UserInterface";
+import {CreateUserKyc, creatUser, UpdateUser, userIncludes} from "../interfaces/UserInterface";
 import {User} from "@prisma/client";
 import HashService from "../security/hashService";
 import {KycStatus} from "../enums/KycStatus";
 import kycService from "./kycService";
 import {KycCreate} from "../interfaces/KycInterface";
 import {extractTextFromImage, parseIdentityData} from "../config/vision";
+import bcrypt from "bcryptjs";
 
 class UserService {
     async phoneExist(phone: string): Promise<User | null> {
@@ -177,7 +178,83 @@ class UserService {
             throw error;
         }
     }
+    async updateUser(data: UpdateUser): Promise<User> {
+        try {
+            // Vérifier si l'utilisateur existe
+            const existingUser = await this.getUserById(data.id);
+            if (!existingUser) {
+                throw new Error('Utilisateur non trouvé');
+            }
+
+            // Si le numéro de téléphone est modifié, vérifier s'il n'existe pas déjà
+            if (data.phoneNumber && data.phoneNumber !== existingUser.phoneNumber) {
+                const phoneExists = await this.phoneExist(data.phoneNumber);
+                if (phoneExists) {
+                    throw new Error('Ce numéro de téléphone est déjà utilisé');
+                }
+            }
+            // Vérifier si le mot de passe actuel est correct
+            if (data.currentPassword ) {
+                // Vérifier si le mot de passe actuel est correct
+                const isPasswordValid: boolean = await bcrypt.compare(data.currentPassword, existingUser.passwordHash);
+                if (!isPasswordValid) {
+                    throw new Error('Les mots de passe utiliser ne corresponde pas');
+
+                }
+                // Vérifier si le mdp est modifié,
+                if (data.password) {
+                    existingUser.passwordHash = await HashService.hash(data.password);
+                }
+            }
+            // Vérifier si le mail est modifié,
+            if (data.email) {
+                const emailExists = await this.emailExist(data.email);
+                if (emailExists && emailExists.id!== data.id) {
+                    throw new Error('Cet email est déjà utilisé');
+                }
+            }
+            // Vérifier si le role est modifié,
+            if (data.role) {
+                existingUser.roleId = await this.getRoleId(data.role);
+            }
+
+            // Vérifier si le kycStatus est modifié,
+            if (data.kycStatus) {
+                existingUser.kycStatus = data.kycStatus;
+            }
+
+            // Mise à jour de l'utilisateur
+            return await prisma.user.update({
+                where: {id: data.id},
+                data: {
+                    email: data.email,
+                    firstName: data.firstName,
+                    photo: data.photo,
+                    passwordHash: existingUser.passwordHash,
+                    lastName: data.lastName,
+                    dateOfBirth: data.dateOfBirth,
+                    address: data.address,
+                    city: data.city,
+                    country: data.country,
+                    phoneNumber: data.phoneNumber,
+                    isVerified: data.isVerified,
+                    isActive: data.isActive,
+                    kycStatus: data.kycStatus,
+                    roleId: existingUser.roleId,
+
+                },
+                include: userIncludes,
+            });
+        } catch (error) {
+            console.error('Error updating user:', error);
+            throw error;
+        }
+    }
 
 
+    private async emailExist(email: string) {
+        return prisma.user.findUnique({ where: { email } });
+
+    }
 }
 export default new UserService();

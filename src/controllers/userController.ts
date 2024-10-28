@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import userService from "../services/userService";
-import {createUserSchema, createUserWithKycSchema, kycSchema} from "../validations/userValidate";
-import {CreateUserKyc, creatUser} from "../interfaces/UserInterface";
-import {ZodError} from "zod";
+import {createUserSchema, createUserWithKycSchema, kycSchema, updateUserSchema} from "../validations/userValidate";
+import {CreateUserKyc, creatUser, UpdateUser} from "../interfaces/UserInterface";
+import {z, ZodError} from "zod";
 import {RoleEnum} from "../enums/RoleEnum";
+import jwt from "jsonwebtoken";
 
 export default new class userController {
     async createAgentOrAdmin(req: Request, res: Response) {
@@ -132,4 +133,83 @@ export default new class userController {
             res.status(500).json({ message: 'Erreur lors du traitement de la demande de données', error, data: null });
         }
     }
+
+    async getCurrentUser(req: Request, res: Response) {
+        console.log('azerty');
+        try {
+            console.log('azerty');
+            // Récupérer l'ID de l'utilisateur depuis le token
+            const authHeader = req.headers.authorization;
+            if (!authHeader) {
+                return res.status(401).json({ message: 'Token non fourni', data: null, error: true });
+            }
+            console.log(authHeader)
+
+            const token = authHeader.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
+            console.log('decoded', decoded)
+            console.log('userId', decoded.userId)
+
+            // Utiliser le service existant pour récupérer l'utilisateur
+            const user = await userService.getUserById(decoded.userId);
+
+            if (!user) {
+                return res.status(404).json({ message: 'Utilisateur non trouvé', data: null, error: true });
+            }
+
+            res.status(200).json({ message: 'Utilisateur récupéré avec succès', data: user, error: false });
+        } catch (error) {
+            if (error instanceof jwt.JsonWebTokenError) {
+                return res.status(401).json({ message: 'Token invalide', data: null, error: true });
+            }
+            res.status(500).json({ message: 'Erreur lors de la récupération de l\'utilisateur', error, data: null });
+        }
+    }
+
+    async updateUser(req: Request, res: Response) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        try {
+            const userId = req.params.id;
+
+            // Conversion de la date si elle est fournie
+            if (req.body.dateOfBirth) {
+                req.body.dateOfBirth = new Date(req.body.dateOfBirth);
+            }
+
+            // Validation des données d'entrée
+            const validatedData = updateUserSchema.parse({
+                ...req.body,
+                photo: files?.photo?.[0]?.path
+            });
+            const updateData: UpdateUser = {
+                ...validatedData,
+                id: userId  // Mettre l'ID à la fin pour s'assurer qu'il ne sera pas écrasé
+            };
+
+
+            // Mise à jour de l'utilisateur avec l'ID séparé des données validées
+            const updatedUser = await userService.updateUser(updateData);
+
+            res.status(200).json({
+                message: 'Utilisateur mis à jour avec succès',
+                data: updatedUser,
+                error: false
+            });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                res.status(400).json({
+                    message: 'Erreur de validation',
+                    errors: error.errors
+                });
+            } else {
+                res.status(500).json({
+                    message: 'Erreur lors de la mise à jour de l\'utilisateur',
+                    error: error instanceof Error ? error.message : error,
+                    data: null
+                });
+            }
+        }
+    }
+
 }
