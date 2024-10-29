@@ -4,6 +4,8 @@ import http from "http";
 import { Server } from "socket.io";
 import authRoute from "./routes/authRoute";
 import authMiddleware from "./middlewares/authMiddleware";
+import contactRoutes from './routes/contactRoute';
+import googleAuthRoute from "./routes/googleAuthRoute";
 import userRoute from "./routes/userRoute";
 
 import notificationRoute from "./routes/notificationRoute";
@@ -29,6 +31,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoute);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/google', googleAuthRoute);
+
+
+
+
 app.use("/api/users", userRoute);
 app.use("/api/notification", notificationRoute);
 app.use("/api/demande", demandeRoute);

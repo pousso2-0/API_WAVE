@@ -4,7 +4,7 @@ export interface ContactInterface {
     id: string;
     userId: string;
     contactId: string;
-    nickname?: string; // Optional
+    nickname: string | null;  
     createdAt: Date;
     updatedAt: Date;
     user: UserInterface;

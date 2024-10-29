@@ -9,6 +9,7 @@ import KycService from "./kycService";
 import { KycCreate } from "../interfaces/KycInterface";
 import { extractTextFromImage, parseIdentityData } from "../config/vision";
 import { generateTemporaryPassword } from "../utils/generatePassword";
+import {WalletService} from "./walletService";
 
 interface ProcessingResult {
     success: boolean;
@@ -63,12 +64,13 @@ class AccountJobService {
                     dateOfBirth: new Date(mergedData.dateOfBirth || "2000-01-01"),
                     address: mergedData.address,
                     city: mergedData.city,
-                    country: mergedData.country || "Senegal",
+                    country:  "Senegal",
                     phoneNumber: accountRequest.phoneNumber,
                     password: temporaryPassword,
                     role: RoleEnum.CLIENT,
                     kycStatus: KycStatus.VERIFIED,
                     isVerified: true,
+                    isActive: true,
                 };
                 // 4. Transaction pour les opérations critiques de base de données
                 const user = await prisma.$transaction(async (prismaTransaction) => {
@@ -84,11 +86,11 @@ class AccountJobService {
                         idCardBackPhoto: accountRequest.idCardBackPhoto,
                         verificationStatus: KycStatus.VERIFIED,
                         verifiedAt: new Date(),
-                        verificationMethod: "Manual",
+                        verificationMethod: "Automatique",
                         rejectionReason: ""
                     };
 
-                    await KycService.createKyc(kycData);
+                     await KycService.createKyc(kycData);
 
                     // Marquer la demande comme traitée
                     await prismaTransaction.accountCreationRequest.update({
