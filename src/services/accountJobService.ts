@@ -9,6 +9,7 @@ import KycService from "./kycService";
 import { KycCreate } from "../interfaces/KycInterface";
 import { extractTextFromImage, parseIdentityData } from "../config/vision";
 import { generateTemporaryPassword } from "../utils/generatePassword";
+import {WalletService} from "./walletService";
 
 interface ProcessingResult {
     success: boolean;
@@ -89,7 +90,7 @@ class AccountJobService {
                         rejectionReason: ""
                     };
 
-                    await KycService.createKyc(kycData);
+                     await KycService.createKyc(kycData);
 
                     // Marquer la demande comme traitée
                     await prismaTransaction.accountCreationRequest.update({

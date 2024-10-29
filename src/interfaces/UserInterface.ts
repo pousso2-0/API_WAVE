@@ -43,6 +43,24 @@ export interface creatUser{
     isActive?: boolean;
 }
 
+// Interface pour la mise à jour d'un utilisateur
+export interface UpdateUser {
+    id: string;
+    email?: string;
+    phoneNumber?: string;
+    password?: string;
+    photo?:string;
+    currentPassword?: string; // Mot de passe actuel pour la validation
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: Date;
+    address?: string;
+    city?: string;
+    country?: string;
+    role?: RoleEnum;
+    kycStatus?: KycStatus;
+    isVerified?: boolean;
+    isActive?: boolean;}
 
 export interface CreateUserKyc extends creatUser {
     kyc?: {

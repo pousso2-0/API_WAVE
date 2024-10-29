@@ -26,6 +26,12 @@ setTimeout(() => {
     // Route pour traiter une demande de récupération des données utilisateur
     userRoute.get('/dmande/:id', authMiddleware, userController.DmandeParseData.bind(userController));
 
+    // Route pour mettre à jour un utilisateur
+    userRoute.patch('/:id', authMiddleware, upload.fields([{ name: "photo", maxCount: 1}]) ,userController.updateUser.bind(userController));
+    // Route pour récupérer les informations d'un utilisateur connecté
+   userRoute.get('/me/moi', authMiddleware, userController.getCurrentUser.bind(userController));
+
 }, 200);
+
 
 export default userRoute;
