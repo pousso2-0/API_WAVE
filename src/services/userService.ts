@@ -10,8 +10,7 @@ import {extractTextFromImage, parseIdentityData} from "../config/vision";
 import bcrypt from "bcryptjs";
 
 class UserService {
-
-    async phoneExist(phone: string): Promise<User | null> {
+    async phoneExist(phone: string): Promise<any> {
         return prisma.user.findUnique({ where: { phoneNumber: phone }, include: { role: true } });
     }
 
