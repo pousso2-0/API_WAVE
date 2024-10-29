@@ -9,7 +9,7 @@ import {KycCreate} from "../interfaces/KycInterface";
 import {extractTextFromImage, parseIdentityData} from "../config/vision";
 
 class UserService {
-    async phoneExist(phone: string): Promise<User | null> {
+    async phoneExist(phone: string): Promise<any> {
         return prisma.user.findUnique({ where: { phoneNumber: phone }, include: { role: true } });
     }
 
@@ -18,7 +18,7 @@ class UserService {
         const roleId = await this.getRoleId(data.role);
 
         try {
-            const user = await prisma.user.create({
+            const user = await prisma.user.create({ 
                 data: {
                     email: data.email,
                     firstName: data.firstName,

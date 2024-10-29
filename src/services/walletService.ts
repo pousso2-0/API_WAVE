@@ -3,27 +3,8 @@ import { NotFoundException } from "../exceptions/index";
 import { User } from "../interfaces/UserInterface";
 import { v4 as uuidv4 } from "uuid";
 import { generateQRCodeService } from "./generateQRCodeService";
+import { TransactionVerificationResult, WalletLimits, WalletProperties } from "../types";
 
-// Types pour améliorer la maintenabilité
-type WalletLimits = {
-  dailyLimit?: number;
-  monthlyLimit?: number;
-};
-
-type WalletProperties = {
-  isActive?: boolean;
-  currency?: string;
-};
-
-type TransactionVerificationResult = {
-  isPossible: boolean;
-  currentBalance: Prisma.Decimal;
-  totalPendingAmount: Prisma.Decimal;
-  remainingBalance: Prisma.Decimal;
-  dailyLimitExceeded?: boolean;
-  monthlyLimitExceeded?: boolean;
-  plafondExceeded?: boolean;
-};
 
 export class WalletService {
   private static instance: WalletService;

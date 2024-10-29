@@ -34,10 +34,9 @@ app.use("/api/notification", notificationRoute);
 app.use("/api/demande", demandeRoute);
 app.use("/api/job", proccessRoute);
 app.use("/api/active", activeRoute);
+app.use("/api/transaction", transactionRoute);
+app.use("/api/wallet", walletRoute);
 
-app.get("/", authMiddleware, (req: Request, res: Response) => {
-  res.send("Bienvenue dans notre api wave");
-});
 
 // Gérer les connexions Socket.IO
 io.on('connection', (socket) => {
@@ -54,9 +53,7 @@ io.on('connection', (socket) => {
   });
 });
 
-app.use("/api/transaction", transactionRoute);
 
-app.use("/api/wallet", walletRoute);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Bienvenue dans notre api wave");

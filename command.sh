@@ -1,6 +1,7 @@
 #ehac-dev
 npx prisma generate
 npm install @faker-js/faker
+npm install decimal.js
 
 # bass-dev
 npm install socket.io
@@ -12,3 +13,4 @@ npm install infobip
 #mg
 npm install uuid
 npm install @types/uuid --save-dev
+
