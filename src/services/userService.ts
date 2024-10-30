@@ -7,6 +7,7 @@ import {KycStatus} from "../enums/KycStatus";
 import kycService from "./kycService";
 import {KycCreate} from "../interfaces/KycInterface";
 import {extractTextFromImage, parseIdentityData} from "../config/vision";
+import { WalletService } from "./walletService";
 import bcrypt from "bcryptjs";
 
 class UserService {
@@ -53,7 +54,13 @@ class UserService {
                         kycStatus: data.kycStatus ?? KycStatus.PENDING,
                     },
                 });
-
+                // Créer automatiquement un wallet pour les utilisateurs non-admin
+                if (data.role !== RoleEnum.ADMIN) {
+                    const walletService = WalletService.getInstance();
+                    await walletService.createWallet({
+                        userId: user.id
+                    });
+                }
                 console.log(`User created with ID: ${user.id}`);
 
                 return user;
