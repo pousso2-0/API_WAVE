@@ -89,6 +89,7 @@ export const userIncludes = {
             receivedTransactions: true,
         },
     },
+    role: true,
     notifications: true,
     kyc: true,
     contacts: true,

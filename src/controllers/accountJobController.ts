@@ -4,6 +4,7 @@ import AccountJobService from "../services/accountJobService";
 class AccountJobController {
     async ManualProccessing(req: Request, res: Response) {
         try {
+            console.log('azerty')
             const result = await AccountJobService.processApprovedRequests();
 
             if (result.failedCount > 0) {

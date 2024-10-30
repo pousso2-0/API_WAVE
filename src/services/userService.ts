@@ -12,8 +12,21 @@ import bcrypt from "bcryptjs";
 class UserService {
 
     async phoneExist(phone: string): Promise<User | null> {
-        return prisma.user.findUnique({ where: { phoneNumber: phone }, include: { role: true } });
+        console.log('Numéro de téléphone recherché:', phone);
+        try {
+            const phonecl = await prisma.user.findUnique({
+                where: { phoneNumber: phone },
+                include: { role: true }
+            });
+            console.log('Résultat trouvé:', phonecl);
+            return phonecl;
+        } catch (error) {
+            console.error('Erreur rencontrée lors de la recherche de l\'utilisateur:', error);
+            return null;  // Assurez-vous que `null` est retourné en cas d'erreur
+        }
     }
+
+
 
     // Fonction pour valider et créer un compte utilisateur
     async createUser(data: creatUser): Promise<User> {

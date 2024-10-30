@@ -167,6 +167,7 @@ export default new class userController {
     }
 
     async updateUser(req: Request, res: Response) {
+        console.log('azerty')
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
         try {
@@ -176,7 +177,6 @@ export default new class userController {
             if (req.body.dateOfBirth) {
                 req.body.dateOfBirth = new Date(req.body.dateOfBirth);
             }
-
             // Validation des données d'entrée
             const validatedData = updateUserSchema.parse({
                 ...req.body,
@@ -186,8 +186,6 @@ export default new class userController {
                 ...validatedData,
                 id: userId  // Mettre l'ID à la fin pour s'assurer qu'il ne sera pas écrasé
             };
-
-
             // Mise à jour de l'utilisateur avec l'ID séparé des données validées
             const updatedUser = await userService.updateUser(updateData);
 

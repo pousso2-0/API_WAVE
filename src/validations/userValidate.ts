@@ -36,7 +36,7 @@ export const createUserWithKycSchema = createUserSchema.extend({
 export const updateUserSchema = z.object({
     email: z.string().email().optional(),
     phoneNumber: z.string().optional(),
-    password: z.string().min(6).optional(),
+    password: z.string().min(4).optional(),
     photo: z.string().optional(), // Ajout du champ photo manquant
     currentPassword: z.string().optional(),
     firstName: z.string().min(2).optional(),

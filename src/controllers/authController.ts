@@ -21,7 +21,7 @@ export default new class authController {
         console.log(phone, password);
 
         try {
-
+            console.log('dugeul fiii')
             const user = await userService.phoneExist(phone);
             if (!user) {
                 return res.status(404).json({ message: 'Le numéro ou mot de passe incorrect', error: true, data: null });
