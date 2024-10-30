@@ -1,143 +1,140 @@
-import { PrismaClient, Contact } from "@prisma/client";
+import { Request, Response } from "express";
+import Controller from "./controller";
+import ContactService from "../services/contactService";
+import { IRequestAuth } from "../interfaces/AuthInterface";
 
-
-class ContactService {
-  private prisma: PrismaClient;
+class ContactController extends Controller {
+  private contactService: ContactService;
 
   constructor() {
-    this.prisma = new PrismaClient();
+    super();
+    this.contactService = new ContactService();
   }
 
-   async createContactByPhone(data: {
-    userId: string;
-    phoneNumber: string;
-    nickname?: string;
-  }): Promise<Contact> {
-    // First, find the user with the given phone number
-    const contactUser = await this.prisma.user.findUnique({
-      where: { phoneNumber: data.phoneNumber }
-    });
 
-    if (!contactUser) {
-      throw new Error("Utilisateur avec ce numéro de téléphone non trouvé");
-    }
+  async addContact(req: Request, res: Response): Promise<void> {
+    const request = req as IRequestAuth;
+    await this.trycatch(async () => {
+      const { phoneNumber, nickname } = request.body;
+      const userId = request.user?.userId;
 
-    // Check if contact already exists
-    const existingContact = await this.prisma.contact.findFirst({
-      where: {
-        userId: data.userId,
-        contactId: contactUser.id
+      if (!userId || !phoneNumber) {
+        return res.status(400).json({
+          message: "Numéro de téléphone manquant",
+          error: null,
+          data: null
+        });
       }
-    });
 
-    if (existingContact) {
-      throw new Error("Ce contact existe déjà");
-    }
-
-    // Create the contact
-    return this.prisma.contact.create({
-      data: {
-        userId: data.userId,
-        contactId: contactUser.id,
-        nickname: data.nickname
-      },
-      select: {
-        id: true,
-        userId: true,
-        contactId: true,
-        nickname: true,
-        createdAt: true,
-        updatedAt: true,
-        contact: {
-          select: {
-            phoneNumber: true,
-            firstName: true,
-            lastName: true,
-            photo: true
-          }
-        }
-      }
-    });
-  }
-
-  async getContactsByUserId(userId: string): Promise<Contact[]> {
-    return this.prisma.contact.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        userId: true,
-        contactId: true,
-        nickname: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
-  }
-
-  async getImportedGoogleContacts(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        googleAccessToken: true
-      }
-    });
-
-    const contacts = await this.prisma.contact.findMany({
-      where: { 
+      const contact = await this.contactService.createContactByPhone({
         userId,
-        user: {
-          googleAccessToken: {
-            not: null
-          }
-        }
-      },
-      include: {
-        contact: {
-          select: {
-            id: true,
-            email: true,
-            phoneNumber: true,
-            firstName: true,
-            lastName: true,
-            photo: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+        phoneNumber,
+        nickname
+      });
 
-    return {
-      hasGoogleAuth: !!user?.googleAccessToken,
-      contacts
-    };
+      res.status(201).json({
+        message: "Contact ajouté avec succès",
+        error: null,
+        data: contact
+      });
+    }, res);
   }
 
-  async updateContact(
-    id: string,
-    userId: string,
-    data: { nickname?: string }
-  ): Promise<Contact> {
-    return this.prisma.contact.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        userId: true,
-        contactId: true,
-        nickname: true,
-        createdAt: true,
-        updatedAt: true
+  async getContacts(req: Request, res: Response): Promise<void> {
+    const request = req as IRequestAuth;
+    await this.trycatch(async () => {
+      const userId = request.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "Non autorisé",
+          error: null,
+          data: null
+        });
       }
-    });
+
+      const contacts = await this.contactService.getContactsByUserId(userId);
+      res.status(200).json({
+        message: "Contacts récupérés avec succès",
+        error: null,
+        data: contacts
+      });
+    }, res);
   }
 
-  async deleteContact(id: string, userId: string): Promise<void> {
-    await this.prisma.contact.delete({
-      where: { id }
-    });
+  async getGoogleContacts(req: Request, res: Response): Promise<void> {
+    const request = req as IRequestAuth;
+    await this.trycatch(async () => {
+      const userId = request.user?.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          message: "Non autorisé",
+          error: null,
+          data: null
+        });
+      }
+
+      const result = await this.contactService.getImportedGoogleContacts(userId);
+      
+      res.status(200).json({
+        message: "Contacts Google récupérés avec succès",
+        error: null,
+        data: {
+          hasGoogleAuth: result.hasGoogleAuth,
+          contacts: result.contacts,
+          totalContacts: result.contacts.length
+        }
+      });
+    }, res);
+  }
+
+  async updateContact(req: Request, res: Response): Promise<void> {
+    const request = req as IRequestAuth;
+    await this.trycatch(async () => {
+      const { id } = request.params;
+      const { nickname } = request.body;
+      const userId = request.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "Non autorisé",
+          error: null,
+          data: null
+        });
+      }
+
+      const updatedContact = await this.contactService.updateContact(id, userId, { nickname });
+      res.status(200).json({
+        message: "Contact mis à jour avec succès",
+        error: null,
+        data: updatedContact
+      });
+    }, res);
+  }
+
+  async deleteContact(req: Request, res: Response): Promise<void> {
+    const request = req as IRequestAuth;
+    await this.trycatch(async () => {
+      const { id } = request.params;
+      const userId = request.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          message: "Non autorisé",
+          error: null,
+          data: null
+        });
+      }
+
+      await this.contactService.deleteContact(id, userId);
+      res.status(200).json({
+        message: "Contact supprimé avec succès",
+        error: null,
+        data: null
+      });
+    }, res);
   }
 }
 
-export default ContactService;
+export default new ContactController();
