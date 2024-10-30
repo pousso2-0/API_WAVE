@@ -31,8 +31,9 @@ export default new class authController {
             if (!isPasswordValid) {
                 return res.status(401).json({ message: 'Le numéro ou mot de passe incorrect', error: true, data: null });
             }
+           const role = userService.getRolename(user.roleId)
 
-            const token: string = jwt.sign({ userId: user.id, role: user.role.name }, process.env.JWT_SECRET!, {
+            const token: string = jwt.sign({ userId: user.id, role:role}, process.env.JWT_SECRET!, {
                 expiresIn: process.env.JWT_EXPIRES_IN,
             });
 

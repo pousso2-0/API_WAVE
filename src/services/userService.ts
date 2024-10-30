@@ -88,7 +88,24 @@ class UserService {
         }
         return roleRecord.id;
     }
+    async getRolename(id: string): Promise<RoleEnum> {
+        const roleRecord = await prisma.role.findUnique({
+            where: { id },
+        });
 
+        if (!roleRecord) {
+            throw new Error(`Role not found with ID ${id}`);
+        }
+
+        const roleName = roleRecord.name;
+
+        // Vérifiez que le nom correspond à une valeur de l'énumération RoleEnum
+        if (!(roleName in RoleEnum)) {
+            throw new Error(`Role name ${roleName} is not a valid RoleEnum`);
+        }
+
+        return roleName as RoleEnum; // Cast pour indiquer à TypeScript que c'est un RoleEnum
+    }
     async createAgentOrAdmin(data: creatUser): Promise<User> {
         return await this.createUser(data);
     }
