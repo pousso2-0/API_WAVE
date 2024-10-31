@@ -123,3 +123,22 @@ export const userIncludes = {
     contacts: true,
     contactList: true,
 };
+
+export const searchUserIncludes = {
+    include: {
+        wallets: {
+            select: {
+                id: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        phoneNumber: true,
+                        email: true,
+                        photo: true
+                    }
+                }
+            }
+        }
+    }
+};
