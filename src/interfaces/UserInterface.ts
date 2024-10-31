@@ -81,12 +81,41 @@ export interface User {
     address: string | null; // Permettre null
 }
 
+
 export const userIncludes = {
     wallets: {
         include: {
             user: true, // Inclure l'objet user
-            sentTransactions: true,
-            receivedTransactions: true,
+            sentTransactions: {
+                include: {
+                     receiverWallet: {
+                        include: {
+                            user: {
+                                select: {
+                                    firstName: true,
+                                    lastName: true,
+                                    phoneNumber: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            receivedTransactions: {
+                include: {
+                    senderWallet: {
+                        include: {
+                            user: {
+                                select: {
+                                    firstName: true,
+                                    lastName: true,
+                                    phoneNumber: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         },
     },
     notifications: true,
