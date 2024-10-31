@@ -212,4 +212,9 @@ export default new class userController {
         }
     }
 
+    async searchUser(req: Request, res: Response) {
+        const searchTerm = req.query.searchTerm as string;
+        const users = await userService.searchUser(searchTerm);
+        res.status(200).json({ message: 'Utilisateurs trouvés avec succès', data: users, error: false });
+    }
 }

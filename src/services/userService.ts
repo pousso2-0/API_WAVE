@@ -1,6 +1,6 @@
 import prisma from "../config/prisma";
 import {RoleEnum} from "../enums/RoleEnum";
-import {CreateUserKyc, creatUser, UpdateUser, userIncludes} from "../interfaces/UserInterface";
+import {CreateUserKyc, creatUser, UpdateUser, userIncludes , searchUserIncludes} from "../interfaces/UserInterface";
 import {User} from "@prisma/client";
 import HashService from "../security/hashService";
 import {KycStatus} from "../enums/KycStatus";
@@ -270,6 +270,41 @@ class UserService {
     private async emailExist(email: string) {
         return prisma.user.findUnique({ where: { email } });
 
+    }
+
+    async searchUser(searchTerm: string) {
+        try {
+            console.log('\n=== DÉBUT RECHERCHE UTILISATEUR ===');
+            console.log('Service - Terme de recherche reçu:', searchTerm);
+            
+            const cleanedSearchTerm = searchTerm.trim();
+            console.log('Service - Terme de recherche nettoyé:', cleanedSearchTerm);
+    
+            const users = await prisma.user.findMany({
+                where: {
+                    OR: [
+                        { firstName: { contains: cleanedSearchTerm, mode: 'insensitive' } },
+                        { lastName: { contains: cleanedSearchTerm, mode: 'insensitive' } },
+                        { phoneNumber: { contains: cleanedSearchTerm } },
+                    ]
+                },
+                ...searchUserIncludes // Utiliser les nouvelles inclusions
+            });
+    
+            console.log('Service - Nombre d\'utilisateurs trouvés:', users.length);
+            
+            if (users.length === 0) {
+                console.log('Service - Aucun utilisateur trouvé');
+                throw new Error('Aucun utilisateur trouvé');
+            }
+    
+            console.log('=== FIN RECHERCHE UTILISATEUR ===\n');
+            return users;
+    
+        } catch (error) {
+            console.error('Service - Erreur lors de la recherche d\'utilisateur:', error);
+            throw error;
+        }
     }
 }
 export default new UserService();
