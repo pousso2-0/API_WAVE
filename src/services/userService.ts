@@ -13,13 +13,11 @@ import bcrypt from "bcryptjs";
 class UserService {
 
     async phoneExist(phone: string): Promise<User | null> {
-        console.log('Numéro de téléphone recherché:', phone);
         try {
             const phonecl = await prisma.user.findUnique({
                 where: { phoneNumber: phone },
                 include: { role: true }
             });
-            console.log('Résultat trouvé:', phonecl);
             return phonecl;
         } catch (error) {
             console.error('Erreur rencontrée lors de la recherche de l\'utilisateur:', error);
@@ -80,6 +78,7 @@ class UserService {
 
 
     async getRoleId(role: RoleEnum) {
+        
         const roleRecord = await prisma.role.findUnique({
             where: { name: role },
         });
@@ -89,13 +88,19 @@ class UserService {
         return roleRecord.id;
     }
     async getRolename(id: string): Promise<RoleEnum> {
+        console.log(id);
+
         const roleRecord = await prisma.role.findUnique({
             where: { id },
         });
 
+        // Vérifiez si le roleRecord est null avant d'accéder à ses propriétés
         if (!roleRecord) {
             throw new Error(`Role not found with ID ${id}`);
         }
+
+        // Maintenant, roleRecord n'est pas null
+        console.log('le role record', roleRecord.name);
 
         const roleName = roleRecord.name;
 
@@ -106,6 +111,7 @@ class UserService {
 
         return roleName as RoleEnum; // Cast pour indiquer à TypeScript que c'est un RoleEnum
     }
+
     async createAgentOrAdmin(data: creatUser): Promise<User> {
         return await this.createUser(data);
     }

@@ -14,6 +14,8 @@ const authRoute: Router = Router();
 
     authRoute.post('/logout', authMiddleware, authController.logout.bind(authController));
 
+authRoute.post('/refresh-token', authController.refreshToken.bind(authController));
+
 
 
 export default authRoute;

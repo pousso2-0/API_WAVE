@@ -11,33 +11,22 @@ export default new class authController {
 
     async logout(req: Request, res: Response) {
         const userId: string = (req as IRequestAuth).user.userId;
-        const token = req.headers['authorization']?.split(' ')[1];
+        const token = req.headers['authorization']?.split(' ')[1]
         blacklistToken(token);
         res.clearCookie('token');
-        res.status(200).json({ data: { userId }, message: 'Déconnexion réussie', error: false });
+        res.status(200).json({ message: 'Deconnexion reussie', data: { userId }, error: false });
     }
 
     async login(req: Request, res: Response) {
         const { phone, password } = req.body;
+
         try {
-            console.log('Vérification du téléphone:', phone);
             const user = await userService.phoneExist(phone);
-            console.log('Utilisateur trouvé:', user);
-
-            if (!user) {
-                return res.status(401).json({ data: null, message: 'Le numéro ou le mot de passe est incorrect.', error: true });
-            }
-
-            console.log('Mot de passe utilisateur:', user.passwordHash);
-            const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-            console.log('Correspondance du mot de passe:', passwordMatch);
-
-            if (!passwordMatch) {
-                return res.status(401).json({ data: null, message: 'Le numéro ou le mot de passe est incorrect.', error: true });
+            if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+                return res.status(401).json({ message: 'Le numéro ou le mot de passe est incorrect.' });
             }
 
             const role = await userService.getRolename(user.roleId);
-            console.log('Rôle de l\'utilisateur:', role);
 
             // Génération des tokens
             const accessToken = jwt.sign(
@@ -45,24 +34,20 @@ export default new class authController {
                 process.env.JWT_SECRET!,
                 { expiresIn: '15m' }
             );
-            console.log('Access Token:', accessToken);
 
             const refreshToken = jwt.sign(
                 { userId: user.id },
-                process.env.JWT_SECRET!,
+                process.env.JWT_REFRESH_SECRET!,
                 { expiresIn: '7d' }
             );
-            console.log('Refresh Token:', refreshToken);
 
             // Réponse avec les tokens
             res.status(200).json({
                 data: { accessToken, refreshToken },
-                message: 'Connexion réussie',
-                error: false
+                message: 'Connexion réussie'
             });
         } catch (error) {
-            console.error('Erreur lors de la connexion:', error);
-            res.status(500).json({ data: null, message: 'Erreur interne du serveur', error: true });
+            res.status(500).json({ message: 'Erreur interne du serveur', error });
         }
     }
 
@@ -70,16 +55,16 @@ export default new class authController {
         const { refreshToken } = req.body;
 
         if (!refreshToken) {
-            return res.status(401).json({ data: null, message: 'Refresh token requis', error: true });
+            return res.status(401).json({ message: 'Refresh token requis' });
         }
 
         try {
             // Vérifier et décoder le refresh token
-            const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as { userId: string };
+            const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as { userId: string };
 
             const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
             if (!user) {
-                return res.status(401).json({ data: null, message: 'Utilisateur non trouvé', error: true });
+                return res.status(401).json({ message: 'Utilisateur non trouvé' });
             }
 
             const role = await userService.getRolename(user.roleId);
@@ -93,12 +78,11 @@ export default new class authController {
 
             res.status(200).json({
                 data: { accessToken: newAccessToken },
-                message: 'Nouveau access token généré',
-                error: false
+                message: 'Nouveau access token généré'
             });
         } catch (error) {
             console.error('Erreur lors du refresh token:', error);
-            res.status(401).json({ data: null, message: 'Refresh token invalide ou expiré', error: true });
+            res.status(401).json({ message: 'Refresh token invalide ou expiré' });
         }
     }
 

@@ -60,6 +60,7 @@ class TransactionController extends Controller {
             const userId = req.params.id;
             const params = this.getPaginationParams(req);
             const timeFrame = this.getTimeFrameParam(req);
+            console.log('zerty');
 
             if (userAuth.role === RoleEnum.CLIENT && userId !== userAuth.userId) {
                 const errorResponse = this.createErrorResponse(
@@ -75,6 +76,7 @@ class TransactionController extends Controller {
                 timeFrame
             );
 
+            console.log(result)
             const response = this.createPaginatedResponse(
                 result,
                 `Transactions de l'utilisateur avec l'id: ${userId}`,
