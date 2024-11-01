@@ -280,30 +280,54 @@ class UserService {
             const cleanedSearchTerm = searchTerm.trim();
             console.log('Service - Terme de recherche nettoyé:', cleanedSearchTerm);
     
+            // Vérifier si le terme de recherche est assez long
+            if (cleanedSearchTerm.length < 2) {
+                return { 
+                    success: true,
+                    data: [],
+                    message: 'Terme de recherche trop court'
+                };
+            }
+    
+            // Diviser le terme de recherche en mots pour une recherche plus flexible
+            const searchWords = cleanedSearchTerm.toLowerCase().split(' ');
+    
             const users = await prisma.user.findMany({
                 where: {
                     OR: [
+                        // Recherche exacte
                         { firstName: { contains: cleanedSearchTerm, mode: 'insensitive' } },
                         { lastName: { contains: cleanedSearchTerm, mode: 'insensitive' } },
                         { phoneNumber: { contains: cleanedSearchTerm } },
+                        // Recherche par mots individuels
+                        {
+                            AND: searchWords.map(word => ({
+                                OR: [
+                                    { firstName: { contains: word, mode: 'insensitive' } },
+                                    { lastName: { contains: word, mode: 'insensitive' } }
+                                ]
+                            }))
+                        }
                     ]
                 },
-                ...searchUserIncludes // Utiliser les nouvelles inclusions
+                ...searchUserIncludes
             });
     
             console.log('Service - Nombre d\'utilisateurs trouvés:', users.length);
             
-            if (users.length === 0) {
-                console.log('Service - Aucun utilisateur trouvé');
-                throw new Error('Aucun utilisateur trouvé');
-            }
-    
-            console.log('=== FIN RECHERCHE UTILISATEUR ===\n');
-            return users;
+            return {
+                success: true,
+                data: users,
+                message: users.length > 0 ? 'Utilisateurs trouvés avec succès' : 'Aucun utilisateur trouvé'
+            };
     
         } catch (error) {
             console.error('Service - Erreur lors de la recherche d\'utilisateur:', error);
-            throw error;
+            return {
+                success: false,
+                data: [],
+                message: 'Erreur lors de la recherche'
+            };
         }
     }
 }
