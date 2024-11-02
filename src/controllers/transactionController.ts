@@ -171,13 +171,13 @@ class TransactionController extends Controller {
                 }
             }
 
-            // Vérification de l'accès au portefeuille récepteur (si applicable)
-            if (receiverWalletId) {
-                const hasAccess = await this.checkWalletAccess(receiverWalletId, req);
-                if (!hasAccess) {
-                    return res.status(403).json(this.createErrorResponse("Vous n'avez pas accès au portefeuille récepteur"));
-                }
-            }
+            // // Vérification de l'accès au portefeuille récepteur (si applicable)
+            // if (receiverWalletId) {
+            //     const hasAccess = await this.checkWalletAccess(receiverWalletId, req);
+            //     if (!hasAccess) {
+            //         return res.status(403).json(this.createErrorResponse("Vous n'avez pas accès au portefeuille récepteur"));
+            //     }
+            // }
 
             // Création de la transaction
             const transaction = await transactionService.createTransaction(
