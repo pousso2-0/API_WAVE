@@ -171,7 +171,7 @@ class TransactionController extends Controller {
                 }
             }
 
-            // // Vérification de l'accès au portefeuille récepteur (si applicable)
+            // Vérification de l'accès au portefeuille récepteur (si applicable)
             // if (receiverWalletId) {
             //     const hasAccess = await this.checkWalletAccess(receiverWalletId, req);
             //     if (!hasAccess) {

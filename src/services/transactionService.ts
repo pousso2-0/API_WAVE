@@ -6,6 +6,8 @@ import { WhereCondition } from "../interfaces/WhereCondition";
 import { Decimal } from "decimal.js"; // Updated import statement
 import { WalletService } from "./walletService";
 import { RoleEnum } from "../enums/RoleEnum";
+import { searchUserIncludes } from "../interfaces/UserInterface";
+
 
 
 class TransactionService {
@@ -92,7 +94,23 @@ class TransactionService {
                 { [`sender${fieldName}`]: Array.isArray(ids) ? { in: idList } : ids },
                 { [`receiver${fieldName}`]: Array.isArray(ids) ? { in: idList } : ids }
             ],
-            ...timeFrameCondition
+            ...timeFrameCondition,
+            include: {
+                senderWallet: {
+                    include: {
+                        user: {
+                            select: searchUserIncludes
+                        }
+                    }
+                },
+                receiverWallet: {   
+                    include: {
+                        user: {
+                            select: searchUserIncludes
+                        }
+                    }
+                }
+            }
         };
     }
 
@@ -238,6 +256,32 @@ class TransactionService {
                     description,
                     feeAmount: new Decimal(feeAmount),
                     feeCurrency: currency,
+                },
+                include: {
+                    senderWallet: {
+                        include: {
+                            user: {
+                                select: {
+                                    firstName: true,
+                                    lastName: true,
+                                    phoneNumber: true,
+                                    photo: true
+                                }
+                            }
+                        }
+                    },
+                    receiverWallet: {
+                        include: {
+                            user: {
+                                select: {
+                                    firstName: true,
+                                    lastName: true,
+                                    phoneNumber: true,
+                                    photo: true
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
