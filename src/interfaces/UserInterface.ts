@@ -81,12 +81,58 @@ export interface User {
     address: string | null; // Permettre null
 }
 
+
+const basicUserSelect = {
+    select: {
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+    },
+};
+export interface UserBasicInfo {
+    id: string;
+    email: string;
+    phoneNumber: string;
+    firstName: string;
+    lastName: string;
+}
+
+
+// Et un objet de sélection pour le wallet
+const basicWalletSelect = {
+    select: {
+        id: true,
+        balance: true,
+        currency: true,
+        user: basicUserSelect,
+    },
+};
+
 export const userIncludes = {
     wallets: {
         include: {
-            user: true, // Inclure l'objet user
-            sentTransactions: true,
-            receivedTransactions: true,
+            sentTransactions: {
+                select: {
+                    id: true,
+                    amount: true,
+                    currency: true,
+                    status: true,
+                    type: true,
+                    createdAt: true,
+                    receiverWallet: basicWalletSelect,
+                },
+            },
+            receivedTransactions: {
+                select: {
+                    id: true,
+                    amount: true,
+                    currency: true,
+                    status: true,
+                    type: true,
+                    createdAt: true,
+                    senderWallet: basicWalletSelect,
+                },
+            },
         },
     },
     role: true,
@@ -94,4 +140,23 @@ export const userIncludes = {
     kyc: true,
     contacts: true,
     contactList: true,
+};
+
+export const searchUserIncludes = {
+    include: {
+        wallets: {
+            select: {
+                id: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        phoneNumber: true,
+                        email: true,
+                        photo: true
+                    }
+                }
+            }
+        }
+    }
 };

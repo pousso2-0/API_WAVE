@@ -2,7 +2,6 @@ import { User } from "@prisma/client";
 import { Request, Response } from "express";
 import userService from "../services/userService";
 import bcrypt from 'bcryptjs';
-import prisma from "../config/prisma";
 import jwt from 'jsonwebtoken';
 import { IRequestAuth } from "../interfaces/AuthInterface";
 import { blacklistToken } from "../security/blackList";
@@ -68,28 +67,33 @@ export default new class authController {
 
     async refreshToken(req: Request, res: Response) {
         const { refreshToken } = req.body;
+        console.log()
 
         if (!refreshToken) {
             return res.status(401).json({ data: null, message: 'Refresh token requis', error: true });
         }
 
         try {
-            // Vérifier et décoder le refresh token
+            console.log('Début de la vérification du refresh token');
             const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as { userId: string };
+            console.log('Token décodé:', decoded);
 
-            const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+            const user = await userService.getUserById(decoded.userId);
+            console.log('Utilisateur récupéré:', user);
+
             if (!user) {
                 return res.status(401).json({ data: null, message: 'Utilisateur non trouvé', error: true });
             }
 
             const role = await userService.getRolename(user.roleId);
+            console.log('Rôle récupéré:', role);
 
-            // Génération d'un nouveau access token
             const newAccessToken = jwt.sign(
                 { userId: user.id, role: role },
                 process.env.JWT_SECRET!,
                 { expiresIn: '15m' }
             );
+            console.log(newAccessToken)
 
             res.status(200).json({
                 data: { accessToken: newAccessToken },

@@ -1,5 +1,6 @@
-import { PrismaClient, Contact } from "@prisma/client";
+import { PrismaClient, Contact , User } from "@prisma/client";
 
+import { UserBasicInfo} from "../interfaces/UserInterface"
 
 class ContactService {
   private prisma: PrismaClient;
@@ -60,17 +61,29 @@ class ContactService {
     });
   }
 
-  async getContactsByUserId(userId: string): Promise<Contact[]> {
+  async getContactsByUserId(userId: string): Promise<(Partial<Contact> & { user: UserBasicInfo; contact: UserBasicInfo })[]>  {
     return this.prisma.contact.findMany({
       where: { userId },
       select: {
-        id: true,
-        userId: true,
-        contactId: true,
-        nickname: true,
-        createdAt: true,
-        updatedAt: true
-      }
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phoneNumber: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+          contact: {
+            select: {
+              id: true,
+              email: true,
+              phoneNumber: true,
+              firstName: true,
+              lastName: true,
+            }
+          }
+        }
     });
   }
 
