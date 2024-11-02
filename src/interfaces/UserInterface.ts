@@ -41,6 +41,9 @@ export interface creatUser{
     kycStatus?: KycStatus;
     isVerified?: boolean;
     isActive?: boolean;
+    currency?: string;
+    dailyLimit?: number;
+    monthlyLimit?: number;
 }
 
 // Interface pour la mise à jour d'un utilisateur

@@ -3,18 +3,15 @@ import express, { Request, Response } from "express";
 import http from "http";
 import { Server } from "socket.io";
 import authRoute from "./routes/authRoute";
-import authMiddleware from "./middlewares/authMiddleware";
 import contactRoutes from './routes/contactRoute';
 import googleAuthRoute from "./routes/googleAuthRoute";
 import userRoute from "./routes/userRoute";
-
 import notificationRoute from "./routes/notificationRoute";
 import walletRoute from "./routes/walletRoute";
 import transactionRoute from "./routes/transactionRoute";
 import demandeRoute from "./routes/demandeRoute";
 import proccessRoute from "./routes/accountJobRoute";
 import activeRoute from "./routes/accountActiveRoute";
-
 
 const app = express();
 const server = http.createServer(app); // Créer un serveur HTTP
@@ -26,17 +23,13 @@ const io = new Server(server, {
   },
 });
 
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Configuration pour accepter des requêtes plus grandes
+app.use(express.json({ limit: '10mb' })); // Ajustez la limite selon vos besoins
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
 app.use("/api/auth", authRoute);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/google', googleAuthRoute);
-
-
-
-
 app.use("/api/users", userRoute);
 app.use("/api/notification", notificationRoute);
 app.use("/api/demande", demandeRoute);
@@ -44,7 +37,6 @@ app.use("/api/job", proccessRoute);
 app.use("/api/active", activeRoute);
 app.use("/api/transaction", transactionRoute);
 app.use("/api/wallet", walletRoute);
-
 
 // Gérer les connexions Socket.IO
 io.on('connection', (socket) => {
@@ -61,12 +53,9 @@ io.on('connection', (socket) => {
   });
 });
 
-
-
 app.get("/", (req: Request, res: Response) => {
     res.send("Bienvenue dans notre api wave");
 })
 
 export { server, io };
-
 export default app;

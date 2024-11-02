@@ -168,29 +168,31 @@ export default new class userController {
 
     async updateUser(req: Request, res: Response) {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-
+    
+        console.log('Données reçues:', JSON.stringify(req.body, null, 2));
+        console.log('Fichiers reçus:', JSON.stringify(files, null, 2));
+    
         try {
             const userId = req.params.id;
-
+    
             // Conversion de la date si elle est fournie
             if (req.body.dateOfBirth) {
                 req.body.dateOfBirth = new Date(req.body.dateOfBirth);
             }
-
+    
             // Validation des données d'entrée
             const validatedData = updateUserSchema.parse({
                 ...req.body,
                 photo: files?.photo?.[0]?.path
             });
+    
             const updateData: UpdateUser = {
                 ...validatedData,
                 id: userId  // Mettre l'ID à la fin pour s'assurer qu'il ne sera pas écrasé
             };
-
-
-            // Mise à jour de l'utilisateur avec l'ID séparé des données validées
+    
             const updatedUser = await userService.updateUser(updateData);
-
+    
             res.status(200).json({
                 message: 'Utilisateur mis à jour avec succès',
                 data: updatedUser,
@@ -203,6 +205,7 @@ export default new class userController {
                     errors: error.errors
                 });
             } else {
+                console.error('Erreur lors de la mise à jour de l\'utilisateur:', error instanceof Error ? error.message : error);
                 res.status(500).json({
                     message: 'Erreur lors de la mise à jour de l\'utilisateur',
                     error: error instanceof Error ? error.message : error,
@@ -211,6 +214,7 @@ export default new class userController {
             }
         }
     }
+    
 
     async searchUser(req: Request, res: Response) {
         const searchTerm = req.query.searchTerm as string;

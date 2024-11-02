@@ -18,12 +18,13 @@ class UserService {
     // Fonction pour valider et créer un compte utilisateur
     async createUser(data: creatUser): Promise<User> {
         const roleId = await this.getRoleId(data.role);
-
-        // Commencez la transaction avec Prisma
+    
+        let user: User; // Déclarez une variable pour stocker l'utilisateur créé
+    
         try {
-            const result = await prisma.$transaction(async (prisma) => {
-                // Créer l'utilisateur
-                const user = await prisma.user.create({
+            // Effectuez la transaction uniquement pour la création de l'utilisateur
+            user = await prisma.$transaction(async (prisma) => {
+                const newUser = await prisma.user.create({
                     data: {
                         email: data.email,
                         firstName: data.firstName,
@@ -40,30 +41,30 @@ class UserService {
                         kycStatus: data.kycStatus ?? KycStatus.PENDING,
                     },
                 });
-                // Créer automatiquement un wallet pour les utilisateurs non-admin
-                if (data.role !== RoleEnum.ADMIN) {
-                    const walletService = WalletService.getInstance();
-                    await walletService.createWallet({
-                        userId: user.id
-                    });
-                }
-                console.log(`User created with ID: ${user.id}`);
-
-                return user;
+    
+                console.log(`User created with ID: ${newUser.id}`);
+                return newUser; // Retournez l'utilisateur créé
             });
-
-            return result; // Retourner l'utilisateur créé si tout réussit
-        } catch (error: any) {
-            if (error.code === 'P2002') {
-                console.error(`User with phone number ${data.phoneNumber} already exists`);
-                throw new Error(`User with phone number ${data.phoneNumber} already exists`);
-            } else {
-                console.error('Error creating user and wallet:', error);
-                throw new Error('Error creating user and wallet');
+    
+            // Créez le wallet après la transaction
+            if (data.role !== RoleEnum.ADMIN) {
+                const walletService = WalletService.getInstance();
+                await walletService.createWallet({
+                    userId: user.id,
+                    currency: data.currency || 'FCFA',
+                    dailyLimit: data.dailyLimit || 50000,
+                    monthlyLimit: data.monthlyLimit || 1000000,
+                });
             }
+    
+            return user; // Retournez l'utilisateur créé
+        } catch (error: any) {
+            console.error('Error creating user and wallet:', error);
+            throw new Error('Error creating user and wallet');
         }
     }
-
+    
+    
 
     async getRoleId(role: RoleEnum) {
         const roleRecord = await prisma.role.findUnique({

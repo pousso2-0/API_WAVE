@@ -97,6 +97,7 @@ class AccountJobService {
                         where: { id: accountRequest.id },
                         data: { processed: true }
                     });
+                    
 
                     return createdUser;
                 }, {
