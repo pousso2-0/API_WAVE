@@ -181,6 +181,7 @@ class TransactionService {
         return prisma.transaction.findFirst({ where: { id } });
     }
 
+    // Ajouter un solde au portefeuille de l'utilisateur agent
     public async addBalanceToUserAgent(userAgentWalletId: string, amount: number) {
         const wallet = await this.getWallet(userAgentWalletId, true);
         
